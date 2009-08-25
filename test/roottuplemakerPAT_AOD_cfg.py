@@ -48,6 +48,14 @@ process.load("RecoBTag.Configuration.RecoBTag_cff")
 process.load("RecoBTag.SoftLepton.softLeptonByPtES_cfi")
 process.load("RecoBTag.SoftLepton.softMuonByPtBJetTags_cfi")
 
+# b-tag discriminators to be added to the PAT jets
+process.allLayer1Jets.discriminatorSources = cms.VInputTag(
+    cms.InputTag("jetBProbabilityBJetTags"),
+    cms.InputTag("simpleSecondaryVertexBJetTags"),
+    cms.InputTag("softMuonByPtBJetTags"),
+    cms.InputTag("trackCountingHighEffBJetTags"),
+)
+
 # Skimming
 process.load("Leptoquarks.LeptonJetFilter.leptonjetfilter_cfi")
 
