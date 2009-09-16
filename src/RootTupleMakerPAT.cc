@@ -12,8 +12,9 @@
 */
 //
 // Original Author:  Ellie Lockner
+//  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.19 2009/07/10 11:27:22 santanas Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.1 2009/08/21 19:24:07 ferencek Exp $
 //
 //
 
@@ -67,9 +68,10 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       int                  prescaleSingleEleRel_;
       int                  prescaleMuon_;
       bool                 usePDFweight_;
+      bool                 doBeamSpotCorr_;
       std::string          PDFset_;
       edm::InputTag        muonLabel_, electronLabel_, caloJetLabel_, genJetLabel_;
-      double               electronIso_, muonIso_;
+      double               electronPt_, electronIso_, muonPt_, muonIso_;
 
       //Output RootNtuple
       TTree *              m_tree;
@@ -121,6 +123,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              elePhi[MAXELECTRONS];
       Float_t              elePt[MAXELECTRONS];
       Float_t              eleEnergy[MAXELECTRONS];
+      Int_t                eleCharge[MAXELECTRONS];
       Float_t              eleCaloEnergy[MAXELECTRONS];
 
       Float_t              eleHoE[MAXELECTRONS];
@@ -133,7 +136,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              eleHcalIso[MAXELECTRONS];
       Float_t              eleRelIso[MAXELECTRONS];
       Int_t                elePassIso[MAXELECTRONS];
-      Int_t                eleHasOverlaps[MAXELECTRONS];
+      Int_t                eleOverlaps[MAXELECTRONS];
       Int_t                eleClassif[MAXELECTRONS];
       Float_t              elePassID[MAXELECTRONS];
 
@@ -154,11 +157,9 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              caloJetHADF[MAXCALOJETS];
       Float_t              caloJetPt_raw[MAXCALOJETS];
       Float_t              caloJetEnergy_raw[MAXCALOJETS];
-      Float_t              caloJetPt_L23[MAXCALOJETS];
-      Float_t              caloJetEnergy_L23[MAXCALOJETS];
       Float_t              caloJetPt[MAXCALOJETS];
       Float_t              caloJetEnergy[MAXCALOJETS];
-      Int_t                caloJetHasOverlaps[MAXCALOJETS];
+      Int_t                caloJetOverlaps[MAXCALOJETS];
       Int_t                caloJetPartonFlavour[MAXCALOJETS];
       Float_t              caloJetTrackCountingHighEffBTag[MAXCALOJETS];
       Float_t              caloJetSimpleSecondaryVertexBTag[MAXCALOJETS];
@@ -174,7 +175,9 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Int_t                muonCharge[MAXMUONS];
       Float_t              muonTrkHits[MAXMUONS];
       Float_t              muonTrkD0[MAXMUONS];
+      Float_t              muonTrkD0Error[MAXMUONS];
       Float_t              muonTrkDz[MAXMUONS];
+      Float_t              muonTrkDzError[MAXMUONS];
       Float_t              muonTrkIso[MAXMUONS];
       Float_t              muonEcalIso[MAXMUONS];
       Float_t              muonHcalIso[MAXMUONS];
@@ -226,15 +229,19 @@ RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
   prescaleSingleEleRel_  = iConfig.getUntrackedParameter<int>("prescaleSingleEleRel",30); 
   prescaleMuon_          = iConfig.getUntrackedParameter<int>("prescaleMuon",30);
 
-  usePDFweight_             = iConfig.getUntrackedParameter<bool>("usePDFweight",1);
-  PDFset_                   = iConfig.getUntrackedParameter<std::string>("PDFSet");
+  usePDFweight_          = iConfig.getUntrackedParameter<bool>("usePDFweight",1);
+  PDFset_                = iConfig.getUntrackedParameter<std::string>("PDFSet");
+  
+  doBeamSpotCorr_        = iConfig.getUntrackedParameter<bool>("doBeamSpotCorr",1);
   
   muonLabel_     = iConfig.getUntrackedParameter<edm::InputTag>("muonLabel",edm::InputTag("cleanLayer1Muons"));
   electronLabel_ = iConfig.getUntrackedParameter<edm::InputTag>("electronLabel",edm::InputTag("cleanLayer1Electrons"));
   caloJetLabel_  = iConfig.getUntrackedParameter<edm::InputTag>("caloJetLabel",edm::InputTag("cleanLayer1Jets"));
   genJetLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("genJetLabel",edm::InputTag("sisCone5GenJets"));
   
+  electronPt_    = iConfig.getUntrackedParameter<double>("electronPt",30.);
   electronIso_   = iConfig.getUntrackedParameter<double>("electronIso",0.1);
+  muonPt_        = iConfig.getUntrackedParameter<double>("muonPt",20.);
   muonIso_       = iConfig.getUntrackedParameter<double>("muonIso",0.05);
 
   //Initialize some variables
@@ -323,6 +330,7 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("elePhi",&elePhi,"elePhi[eleCount]/F");
   m_tree->Branch("elePt",&elePt,"elePt[eleCount]/F");
   m_tree->Branch("eleEnergy",&eleEnergy,"eleEnergy[eleCount]/F");
+  m_tree->Branch("eleCharge",&eleCharge,"eleCharge[eleCount]/I");
   m_tree->Branch("eleCaloEnergy",&eleCaloEnergy,"eleCaloEnergy[eleCount]/F");
   m_tree->Branch("eleHoE",&eleHoE,"eleHoE[eleCount]/F");
   m_tree->Branch("eleSigmaEE",&eleSigmaEE,"eleSigmaEE[eleCount]/F");
@@ -333,7 +341,7 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("eleHcalIso",&eleHcalIso,"eleHcalIso[eleCount]/F");
   m_tree->Branch("eleRelIso",&eleRelIso,"eleRelIso[eleCount]/F");
   m_tree->Branch("elePassIso",&elePassIso,"elePassIso[eleCount]/I");
-  m_tree->Branch("eleHasOverlaps",&eleHasOverlaps,"eleHasOverlaps[eleCount]/I");
+  m_tree->Branch("eleOverlaps",&eleOverlaps,"eleOverlaps[eleCount]/I");
   m_tree->Branch("eleClassif",&eleClassif,"eleClassif[eleCount]/I");
   m_tree->Branch("elePassID",&elePassID,"elePassID[eleCount]/F");
 
@@ -354,7 +362,7 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("caloJetEnergy_raw",&caloJetEnergy_raw,"caloJedtEnergy_raw[caloJetCount]/F");
   m_tree->Branch("caloJetEMF",&caloJetEMF,"caloJetEMF[caloJetCount]/F");
   m_tree->Branch("caloJetHADF",&caloJetHADF,"caloJetHADF[caloJetCount]/F");
-  m_tree->Branch("caloJetHasOverlaps",&caloJetHasOverlaps,"caloJetHasOverlaps[caloJetCount]/I");
+  m_tree->Branch("caloJetOverlaps",&caloJetOverlaps,"caloJetOverlaps[caloJetCount]/I");
   m_tree->Branch("caloJetPartonFlavour",&caloJetPartonFlavour,"caloJetPartonFlavour[caloJetCount]/I");
   m_tree->Branch("caloJetTrackCountingHighEffBTag",&caloJetTrackCountingHighEffBTag,"caloJetTrackCountingHighEffBTag[caloJetCount]/F");
   m_tree->Branch("caloJetSimpleSecondaryVertexBTag",&caloJetSimpleSecondaryVertexBTag,"caloJetSimpleSecondaryVertexBTag[caloJetCount]/F");
@@ -369,7 +377,9 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("muonCharge",&muonCharge,"muonCharge[muonCount]/I");
   m_tree->Branch("muonTrkHits",&muonTrkHits,"muonTrkHits[muonCount]/F");
   m_tree->Branch("muonTrkD0",&muonTrkD0,"muonTrkD0[muonCount]/F");
+  m_tree->Branch("muonTrkD0Error",&muonTrkD0Error,"muonTrkD0Error[muonCount]/F");
   m_tree->Branch("muonTrkDz",&muonTrkDz,"muonTrkDz[muonCount]/F");
+  m_tree->Branch("muonTrkDzError",&muonTrkDzError,"muonTrkDzError[muonCount]/F");
   m_tree->Branch("muonTrkIso",&muonTrkIso,"muonTrkIso[muonCount]/F");
   m_tree->Branch("muonEcalIso",&muonEcalIso,"muonEcalIso[muonCount]/F");
   m_tree->Branch("muonHcalIso",&muonHcalIso,"muonHcalIso[muonCount]/F");
@@ -493,15 +503,16 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       if(eleCount > maxelectrons_)
         break;
       
-      int overlapsWithGoodMuon = 0;
+      int overlaps = 0;
       
       const reco::CandidatePtrVector & muons = electron->overlaps("muons");
       for (size_t i = 0; i < muons.size(); ++i) {
         // try to convert to pat::Muons
         const pat::Muon *muon = dynamic_cast<const pat::Muon *>(&*muons[i]);
         if (muon) {
-           if (muon->isGood(reco::Muon::GlobalMuonPromptTight) && 
-               ((muon->trackIso()+muon->ecalIso()+muon->hcalIso())/muon->pt())<muonIso_) overlapsWithGoodMuon = 1;
+           if (muon->isGood(reco::Muon::GlobalMuonPromptTight) 
+               && ((muon->trackIso()+muon->ecalIso()+muon->hcalIso())/muon->pt())<muonIso_
+               && muon->pt()>muonPt_) overlaps = 1;
         }
       }
 
@@ -510,14 +521,28 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       float hcalIso = electron->hcalIso();
       float pt = electron->pt();
       float relIso = (trkIso+ecalIso+hcalIso)/pt;
-      int isIsolated = 0;
-      if (relIso<electronIso_) isIsolated = 1;
+      int passIso = 0;
+      if (relIso<electronIso_) passIso = 1;
+      int passID = 0;
+      /* passID for different electron IDs is assigned bitwise
+         bit 0: eidRobustLoose
+         bit 1: eidRobustTight
+         bit 2: eidLoose
+         bit 3: eidTight
+         bit 4: eidRobustHighEnergy
+      */
+      if (electron->electronID("eidRobustLoose")>0) passID = passID | 1<<0;
+      if (electron->electronID("eidRobustTight")>0) passID = passID | 1<<1;
+      if (electron->electronID("eidLoose")>0) passID = passID | 1<<2;
+      if (electron->electronID("eidTight")>0) passID = passID | 1<<3;
+      if (electron->electronID("eidRobustHighEnergy")>0) passID = passID | 1<<4;
       
      // Set variables in RootNtuple
       eleEta[eleCount]=electron->eta();
       elePhi[eleCount]=electron->phi();
       elePt[eleCount]=pt;
       eleEnergy[eleCount]=electron->energy();
+      eleCharge[eleCount]=electron->charge();
       eleCaloEnergy[eleCount]=electron->caloEnergy();
 
       //////////ID variables
@@ -526,15 +551,15 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       eleDeltaPhiTrkSC[eleCount]=electron->deltaPhiSuperClusterTrackAtVtx();
       eleDeltaEtaTrkSC[eleCount]=electron->deltaEtaSuperClusterTrackAtVtx();
       eleClassif[eleCount]=electron->classification();
-      elePassID[eleCount]=electron->electronID("eidTight");
+      elePassID[eleCount]=passID;
 
       //////////Iso variables
       eleTrkIso[eleCount]=trkIso;
       eleEcalIso[eleCount]=ecalIso;
       eleHcalIso[eleCount]=hcalIso;
       eleRelIso[eleCount]=relIso;
-      elePassIso[eleCount]=isIsolated;
-      eleHasOverlaps[eleCount]=overlapsWithGoodMuon;
+      elePassIso[eleCount]=passIso;
+      eleOverlaps[eleCount]=overlaps;
 
       //go to next electron
       eleCount++;
@@ -569,8 +594,8 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       if(genJetCount > maxgenjets_)
         break;
 
-      float EMF = genjet->emEnergy() / genjet->energy();
-      float HADF = genjet->hadEnergy() / genjet->energy();
+      float EMF = genjet->emEnergy()/genjet->energy();
+      float HADF = genjet->hadEnergy()/genjet->energy();
 
       genJetPt[genJetCount]=genjet->pt();
       genJetPhi[genJetCount]=genjet->phi();
@@ -597,26 +622,45 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       if(caloJetCount > maxcalojets_)
         break;
       
-      int overlapsWithGoodMuon = 0;
-      int overlapsWithGoodEle = 0;
-      
-      const reco::CandidatePtrVector & muons = calojet->overlaps("muons");
-      for (size_t i = 0; i < muons.size(); ++i) {
-        // try to convert to pat::Muons
-        const pat::Muon *muon = dynamic_cast<const pat::Muon *>(&*muons[i]);
-        if (muon) {
-           if (muon->isGood(reco::Muon::GlobalMuonPromptTight) && 
-               ((muon->trackIso()+muon->ecalIso()+muon->hcalIso())/muon->pt())<muonIso_) overlapsWithGoodMuon = 1;
-        }
-      }
-      
+      int overlaps = 0;
+      /* overlaps with good electrons (with different electron IDs) and muons are handled bitwise
+         bit 0: eidRobustLoose
+         bit 1: eidRobustTight
+         bit 2: eidLoose
+         bit 3: eidTight
+         bit 4: eidRobustHighEnergy
+         bit 5: GlobalMuonPromptTight
+      */
       const reco::CandidatePtrVector & electrons = calojet->overlaps("electrons");
       for (size_t i = 0; i < electrons.size(); ++i) {
         // try to convert to pat::Electron
         const pat::Electron *electron = dynamic_cast<const pat::Electron *>(&*electrons[i]);
         if (electron) {
-           if (electron->electronID("eidTight")>0. && 
-               ((electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->pt())<electronIso_) overlapsWithGoodEle = 1;
+           if (electron->electronID("eidRobustLoose")>0. 
+               && ((electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->pt())<electronIso_
+               && electron->pt()>electronPt_) overlaps = overlaps | 1<<0;
+           if (electron->electronID("eidRobustTight")>0. 
+               && ((electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->pt())<electronIso_
+               && electron->pt()>electronPt_) overlaps = overlaps | 1<<1;
+           if (electron->electronID("eidLoose")>0. 
+               && ((electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->pt())<electronIso_
+               && electron->pt()>electronPt_) overlaps = overlaps | 1<<2;
+           if (electron->electronID("eidTight")>0. 
+               && ((electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->pt())<electronIso_
+               && electron->pt()>electronPt_) overlaps = overlaps | 1<<3;
+           if (electron->electronID("eidRobustHighEnergy")>0. 
+               && ((electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->pt())<electronIso_
+               && electron->pt()>electronPt_) overlaps = overlaps | 1<<4;
+        }
+      }
+      const reco::CandidatePtrVector & muons = calojet->overlaps("muons");
+      for (size_t i = 0; i < muons.size(); ++i) {
+        // try to convert to pat::Muons
+        const pat::Muon *muon = dynamic_cast<const pat::Muon *>(&*muons[i]);
+        if (muon) {
+           if (muon->isGood(reco::Muon::GlobalMuonPromptTight) 
+               && ((muon->trackIso()+muon->ecalIso()+muon->hcalIso())/muon->pt())<muonIso_
+               && muon->pt()>muonPt_) overlaps = overlaps | 1<<5;
         }
       }
 
@@ -628,7 +672,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       caloJetEta[caloJetCount]=calojet->eta();
       caloJetEMF[caloJetCount]=calojet->emEnergyFraction();
       caloJetHADF[caloJetCount]=calojet->energyFractionHadronic();
-      caloJetHasOverlaps[caloJetCount]=(overlapsWithGoodEle+2*overlapsWithGoodMuon);
+      caloJetOverlaps[caloJetCount]=overlaps;
       caloJetPartonFlavour[caloJetCount]=calojet->partonFlavour();
       caloJetTrackCountingHighEffBTag[caloJetCount]=calojet->bDiscriminator("trackCountingHighEffBJetTags");
       caloJetSimpleSecondaryVertexBTag[caloJetCount]=calojet->bDiscriminator("simpleSecondaryVertexBJetTag");
@@ -669,7 +713,6 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   if(debug_==true)
     cout << "MET filled" << endl;
 
-
   /////////////////// HLT info
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -694,10 +737,13 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
         cout << "HLT bits not filled" << endl;
     }
 
-  ///////////////// Muons
+  ///////////////// Muons + BeamSpot
   /////////////////////////////////////////////////////////////////////////////////////////////
   edm::Handle<std::vector<pat::Muon> > muons;
-  iEvent.getByLabel(muonLabel_, muons); 
+  iEvent.getByLabel(muonLabel_, muons);
+  
+  Handle<reco::BeamSpot> beamSpot;
+  iEvent.getByLabel("offlineBeamSpot", beamSpot );  
 
   muonCount = 0;  
   for( std::vector<pat::Muon>::const_iterator muon = muons->begin(); muon != muons->end();++muon )
@@ -709,32 +755,37 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       if(!muon->isGlobalMuon())
         continue;
         
+      float trkd0 = muon->track()->d0();
+      if (doBeamSpotCorr_ && beamSpot.isValid()) trkd0 = -(muon->track()->dxy( beamSpot->position()));
+      else if (doBeamSpotCorr_ && !beamSpot.isValid()) cout << "No beam spot available!" << endl;
       float trkIso = muon->trackIso();
       float ecalIso = muon->ecalIso();
       float hcalIso = muon->hcalIso();
       float pt = muon->pt();
       float relIso = (trkIso+ecalIso+hcalIso)/pt;
-      int isIsolated = 0;
-      if (relIso<muonIso_) isIsolated = 1;
-      int isGood = 0;
-      if (muon->isGood(reco::Muon::GlobalMuonPromptTight)) isGood = 1;
+      int passIso = 0;
+      if (relIso<muonIso_) passIso = 1;
+      int passID = 0;
+      if (muon->isGood(reco::Muon::GlobalMuonPromptTight)) passID = 1;
       
       muonEta[muonCount]        = muon->eta();
       muonPhi[muonCount]        = muon->phi();
       muonPt[muonCount]         = pt;
       muonEnergy[muonCount]     = muon->energy();
       muonCharge[muonCount]     = muon->charge();
-      muonTrkHits[muonCount]    = muon->globalTrack()->numberOfValidHits();
-      muonTrkD0[muonCount]      = muon->globalTrack()->d0();
-      muonTrkDz[muonCount]      = muon->globalTrack()->dz();
-      muonGlobalChi2[muonCount] = muon->globalTrack()->normalizedChi2();
+      muonTrkHits[muonCount]    = muon->track()->numberOfValidHits();
+      muonTrkD0[muonCount]      = trkd0;
+      muonTrkD0Error[muonCount] = muon->track()->d0Error();
+      muonTrkDz[muonCount]      = muon->track()->dz();
+      muonTrkDzError[muonCount] = muon->track()->dzError();
+      muonGlobalChi2[muonCount] = muon->track()->normalizedChi2();
       muonTrkIso[muonCount]     = trkIso;
       muonEcalIso[muonCount]    = ecalIso;
       muonHcalIso[muonCount]    = hcalIso;
       muonHOIso[muonCount]      = muon->isolationR03().hoEt;
       muonRelIso[muonCount]     = relIso;
-      muonPassIso[muonCount]      = isIsolated;
-      muonPassID[muonCount]         = isGood;
+      muonPassIso[muonCount]    = passIso;
+      muonPassID[muonCount]     = passID;
 
       muonCount++;
     } 

@@ -53,6 +53,9 @@ extern "C" {
 // GenParticle stuff
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
+// BeamSpot stuff
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
+
 // MET stuff
 #include "DataFormats/METReco/interface/CaloMET.h"
 #include "DataFormats/METReco/interface/GenMET.h"
@@ -102,13 +105,11 @@ extern "C" {
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 #include "Geometry/CaloEventSetup/interface/CaloTopologyRecord.h"
 
-
 //Electron Isolation
 #include "DataFormats/Candidate/interface/CandAssociation.h"
 #include "DataFormats/RecoCandidate/interface/RecoCandidate.h"
 #include "DataFormats/EgammaCandidates/interface/GsfElectronIsoCollection.h"
 #include "DataFormats/EgammaCandidates/interface/GsfElectronIsoNumCollection.h"
-
 
 // PAT stuff
 #include "DataFormats/Common/interface/View.h"

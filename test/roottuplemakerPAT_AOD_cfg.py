@@ -73,11 +73,14 @@ process.treeCreator.numEvents       = cms.untracked.int32(10)
 process.treeCreator.saveTrigger     = cms.untracked.bool(True)
 process.treeCreator.usePDFweight    = cms.untracked.bool(False)
 process.treeCreator.PDFSet          = cms.untracked.string("/cteq61.LHgrid")
+process.treeCreator.doBeamSpotCorr  = cms.untracked.bool(True)
 process.treeCreator.muonLabel       = cms.untracked.InputTag("cleanLayer1Muons");
 process.treeCreator.electronLabel   = cms.untracked.InputTag("cleanLayer1Electrons");
 process.treeCreator.caloJetLabel    = cms.untracked.InputTag("cleanLayer1Jets");
 process.treeCreator.genJetLabel     = cms.untracked.InputTag("iterativeCone5GenJets");
+process.treeCreator.electronPt      = cms.untracked.double(30.);
 process.treeCreator.electronIso     = cms.untracked.double(0.1);
+process.treeCreator.muonPt          = cms.untracked.double(20.);
 process.treeCreator.muonIso         = cms.untracked.double(0.05);
 
 # PAT sequence modification
@@ -106,13 +109,14 @@ process.out.outputCommands += [
     'keep *_layer1METs*_*_*',
     # GEN
     'keep recoGenParticles_genParticles_*_*',
-    #'keep *_genEventScale_*_*',
-    #'keep *_genEventWeight_*_*',
+    'keep *_genEventScale_*_*',
+    'keep *_genEventWeight_*_*',
     'keep *_genEventPdfInfo_*_*',
     'keep *_genMet_*_*',
     'keep *_iterativeCone5GenJets_*_*',
     # TRIGGER
     'keep edmTriggerResults_TriggerResults_*_HLT',
+    'keep *_hltTriggerSummaryAOD_*_*',
     # PAT (dropped)
     'drop *_cleanLayer1Photons_*_*',
     'drop *_cleanLayer1Taus_*_*', 
