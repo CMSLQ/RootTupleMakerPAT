@@ -190,10 +190,13 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       // MET 
       Float_t              genMET;
       Float_t              genMETPhi;
+      Float_t              genSumET;
       Float_t              caloMET;
       Float_t              caloMETPhi;
+      Float_t              caloSumET;
       Float_t              tcMET;
       Float_t              tcMETPhi;
+      Float_t              tcSumET;
 
       // TFile service
       edm::Service<TFileService> fs;
@@ -391,10 +394,13 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
 
   m_tree->Branch("genMET",&genMET,"genMET/F");
   m_tree->Branch("genMETPhi",&genMETPhi,"genMETPhi/F");
+  m_tree->Branch("genSumET",&genSumET,"genSumET/F");
   m_tree->Branch("caloMET",&caloMET,"caloMET/F");
   m_tree->Branch("caloMETPhi",&caloMETPhi,"caloMETPhi/F");
+  m_tree->Branch("caloSumET",&caloSumET,"caloSumET/F");
   m_tree->Branch("tcMET",&tcMET,"tcMET/F");
   m_tree->Branch("tcMETPhi",&tcMETPhi,"tcMETPhi/F");
+  m_tree->Branch("tcSumET",&tcSumET,"tcSumET/F");
 }
 
 // ------------ method called for each event  ------------
@@ -693,14 +699,17 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   const pat::MET& recomet = (*recoMET)[0];
   caloMET = recomet.et();
   caloMETPhi = recomet.phi();
+  caloSumET = recomet.sumEt();
 
   genMET = -99;
   genMETPhi = -99;
+  genSumET = -99.;
 
   const reco::GenMET* genmet = recomet.genMET();
   if (genmet!=NULL) {
      genMET = genmet->pt();
-     genMETPhi= genmet->phi();
+     genMETPhi = genmet->phi();
+     genSumET = genmet->sumEt();
   }
 
   Handle<std::vector<pat::MET> > recoMETtc;
@@ -709,6 +718,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   const pat::MET& recomettc = (*recoMETtc)[0];
   tcMET = recomettc.et();
   tcMETPhi = recomettc.phi();
+  tcSumET = recomettc.sumEt();
 
   if(debug_==true)
     cout << "MET filled" << endl;
