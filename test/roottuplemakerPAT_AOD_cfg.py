@@ -105,8 +105,6 @@ process.outpath = cms.EndPath(process.out)
 from PhysicsTools.PatAlgos.patEventContent_cff import *
 process.out.outputCommands += patEventContent
 process.out.outputCommands += [
-    # PAT
-    'keep *_layer1METs*_*_*',
     # GEN
     'keep recoGenParticles_genParticles_*_*',
     'keep *_genEventScale_*_*',
@@ -114,9 +112,13 @@ process.out.outputCommands += [
     'keep *_genEventPdfInfo_*_*',
     'keep *_genMet_*_*',
     'keep *_iterativeCone5GenJets_*_*',
+    # PFlow
+    'keep *_pfMet_*_*',
     # TRIGGER
     'keep edmTriggerResults_TriggerResults_*_HLT',
     'keep *_hltTriggerSummaryAOD_*_*',
+    # PAT
+    'keep *_layer1METs*_*_*',
     # PAT (dropped)
     'drop *_cleanLayer1Photons_*_*',
     'drop *_cleanLayer1Taus_*_*', 

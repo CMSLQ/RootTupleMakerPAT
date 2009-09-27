@@ -3,7 +3,7 @@
 // Package:    RootTupleMakerPAT
 // Class:      RootTupleMakerPAT
 // 
-/**\class RootTupleMakerPAT RootTupleMakerPAT.cc RootTuple/RootTupleMakerPAT/src/RootTupleMakerPAT.cc
+/**\class RootTupleMakerPAT RootTupleMakerPAT.cc Leptoquarks/RootTupleMakerPAT/src/RootTupleMakerPAT.cc
 
  Description: <one line class summary>
 
@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.1 2009/08/21 19:24:07 ferencek Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.3 2009/09/17 16:37:01 ferencek Exp $
 //
 //
 
@@ -197,6 +197,9 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              tcMET;
       Float_t              tcMETPhi;
       Float_t              tcSumET;
+      Float_t              pfMET;
+      Float_t              pfMETPhi;
+      Float_t              pfSumET;
 
       // TFile service
       edm::Service<TFileService> fs;
@@ -401,6 +404,9 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("tcMET",&tcMET,"tcMET/F");
   m_tree->Branch("tcMETPhi",&tcMETPhi,"tcMETPhi/F");
   m_tree->Branch("tcSumET",&tcSumET,"tcSumET/F");
+  m_tree->Branch("pfMET",&pfMET,"pfMET/F");
+  m_tree->Branch("pfMETPhi",&pfMETPhi,"pfMETPhi/F");
+  m_tree->Branch("pfSumET",&pfSumET,"pfSumET/F");
 }
 
 // ------------ method called for each event  ------------
@@ -594,7 +600,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   iEvent.getByLabel(genJetLabel_, genJets);
   
   genJetCount=0;
-  for( GenJetCollection::const_iterator genjet = genJets->begin(); genjet != genJets->end(); genjet++ ) 
+  for( GenJetCollection::const_iterator genjet = genJets->begin(); genjet != genJets->end();++genjet ) 
     {
       //exit from loop when you reach the required number of electrons
       if(genJetCount > maxgenjets_)
@@ -693,33 +699,56 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   ////////// MET and GenMET
   //////////////////////////////////////////////////////////////////////////////////////////
+  genMET = -99.;
+  genMETPhi = -99.;
+  genSumET = -99.;
+  caloMET = -99.;
+  caloMETPhi = -99.;
+  caloSumET = -99.;
+  tcMET = -99.;
+  tcMETPhi = -99.;
+  tcSumET = -99.;
+  pfMET = -99.;
+  pfMETPhi = -99.;
+  pfSumET = -99.;
+  
   Handle<std::vector<pat::MET> > recoMET;
   iEvent.getByLabel("layer1METs", recoMET);
 
-  const pat::MET& recomet = (*recoMET)[0];
-  caloMET = recomet.et();
-  caloMETPhi = recomet.phi();
-  caloSumET = recomet.sumEt();
+  if(recoMET.isValid()) {
+    const pat::MET& recomet = (*recoMET)[0];
+    caloMET = recomet.et();
+    caloMETPhi = recomet.phi();
+    caloSumET = recomet.sumEt();
 
-  genMET = -99;
-  genMETPhi = -99;
-  genSumET = -99.;
-
-  const reco::GenMET* genmet = recomet.genMET();
-  if (genmet!=NULL) {
-     genMET = genmet->pt();
-     genMETPhi = genmet->phi();
-     genSumET = genmet->sumEt();
+    const reco::GenMET* genmet = recomet.genMET();
+    if (genmet) {
+      genMET = genmet->pt();
+      genMETPhi = genmet->phi();
+      genSumET = genmet->sumEt();
+    }
   }
 
   Handle<std::vector<pat::MET> > recoMETtc;
   iEvent.getByLabel("layer1METsTC", recoMETtc);
+  
+  if(recoMETtc.isValid()) {
+    const pat::MET& recomettc = (*recoMETtc)[0];
+    tcMET = recomettc.et();
+    tcMETPhi = recomettc.phi();
+    tcSumET = recomettc.sumEt();
+  }
+  
+  Handle<std::vector<reco::PFMET> > recoMETpf;
+  iEvent.getByLabel("pfMet", recoMETpf);
 
-  const pat::MET& recomettc = (*recoMETtc)[0];
-  tcMET = recomettc.et();
-  tcMETPhi = recomettc.phi();
-  tcSumET = recomettc.sumEt();
-
+  if(recoMETpf.isValid()) {
+    const reco::PFMET& recometpf = (*recoMETpf)[0];
+    pfMET = recometpf.et();
+    pfMETPhi = recometpf.phi();
+    pfSumET = recometpf.sumEt();
+  }
+  
   if(debug_==true)
     cout << "MET filled" << endl;
 

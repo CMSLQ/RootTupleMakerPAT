@@ -60,6 +60,7 @@ extern "C" {
 #include "DataFormats/METReco/interface/CaloMET.h"
 #include "DataFormats/METReco/interface/GenMET.h"
 #include "DataFormats/METReco/interface/MET.h"
+#include "DataFormats/METReco/interface/PFMET.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 
 #include "DataFormats/METReco/interface/CaloMETCollection.h"
