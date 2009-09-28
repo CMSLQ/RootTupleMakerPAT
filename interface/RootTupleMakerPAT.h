@@ -16,8 +16,8 @@
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "SimDataFormats/HepMCProduct/interface/HepMCProduct.h"
-#include "SimDataFormats/HepMCProduct/interface/GenInfoProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
+#include "SimDataFormats/GeneratorProducts/interface/GenRunInfoProduct.h"
 #include "FWCore/Framework/interface/Run.h"
 #include "FWCore/Framework/interface/CachedProducts.h"
 
@@ -36,8 +36,6 @@
 #include "TLorentzVector.h"
 
 //Event info
-#include "DataFormats/HepMCCandidate/interface/PdfInfo.h"
-#include <SimDataFormats/HepMCProduct/interface/HepMCProduct.h>
 #include "DataFormats/HepMCCandidate/interface/PdfInfo.h"
 //LHAPDF stuff
 
@@ -60,7 +58,6 @@ extern "C" {
 #include "DataFormats/METReco/interface/CaloMET.h"
 #include "DataFormats/METReco/interface/GenMET.h"
 #include "DataFormats/METReco/interface/MET.h"
-#include "DataFormats/METReco/interface/PFMET.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 
 #include "DataFormats/METReco/interface/CaloMETCollection.h"

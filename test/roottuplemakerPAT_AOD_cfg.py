@@ -10,12 +10,6 @@ process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
 process.MessageLogger.cerr.default.limit = 100
 #################################################################
-process.MessageLogger.cerr.threshold = 'INFO'
-process.MessageLogger.categories.append('PATSummaryTables')
-process.MessageLogger.cerr.INFO = cms.untracked.PSet(
-    default          = cms.untracked.PSet( limit = cms.untracked.int32(0)  ),
-    PATSummaryTables = cms.untracked.PSet( limit = cms.untracked.int32(-1) )
-)
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 # source
@@ -28,25 +22,19 @@ process.TFileService = cms.Service("TFileService",
     fileName = cms.string('RootTupleMakerPAT_output.root')
 )
 
-# PAT Layer 0+1
+# load the standard PAT config
 process.load("PhysicsTools.PatAlgos.patSequences_cff")
 
 ## Load additional RECO config
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = cms.string('IDEAL_V12::All')
+process.GlobalTag.globaltag = 'MC_31X_V3::All'
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
-# add tcMET
+# add tcMET and pfMET
 from PhysicsTools.PatAlgos.tools.metTools import *
 addTcMET(process, 'TC')
-
-## b-tagging general configuration
-process.load("RecoBTag.Configuration.RecoBTag_cff")
-
-## configure the softMuonByPt ESProducer and EDProducer
-process.load("RecoBTag.SoftLepton.softLeptonByPtES_cfi")
-process.load("RecoBTag.SoftLepton.softMuonByPtBJetTags_cfi")
+addPfMET(process, 'PF')
 
 # b-tag discriminators to be added to the PAT jets
 process.allLayer1Jets.discriminatorSources = cms.VInputTag(
@@ -55,6 +43,16 @@ process.allLayer1Jets.discriminatorSources = cms.VInputTag(
     cms.InputTag("softMuonByPtBJetTags"),
     cms.InputTag("trackCountingHighEffBJetTags"),
 )
+
+# fix InputTags for ECAL IsoDeposits (to work with FastSim samples)
+process.eleIsoDepositEcalFromHits.ExtractorPSet.barrelEcalHits = cms.InputTag("reducedEcalRecHitsEB")
+process.eleIsoDepositEcalFromHits.ExtractorPSet.endcapEcalHits = cms.InputTag("reducedEcalRecHitsEE")
+process.gamIsoDepositEcalFromHits.ExtractorPSet.barrelEcalHits = cms.InputTag("reducedEcalRecHitsEB")
+process.gamIsoDepositEcalFromHits.ExtractorPSet.endcapEcalHits = cms.InputTag("reducedEcalRecHitsEE")
+
+# load the coreTools of PAT
+from PhysicsTools.PatAlgos.tools.coreTools import *
+restrictInputToAOD(process, ['All'])
 
 # Skimming
 process.load("Leptoquarks.LeptonJetFilter.leptonjetfilter_cfi")
@@ -73,7 +71,7 @@ process.treeCreator.numEvents       = cms.untracked.int32(10)
 process.treeCreator.saveTrigger     = cms.untracked.bool(True)
 process.treeCreator.usePDFweight    = cms.untracked.bool(False)
 process.treeCreator.PDFSet          = cms.untracked.string("/cteq61.LHgrid")
-process.treeCreator.doBeamSpotCorr  = cms.untracked.bool(True)
+process.treeCreator.doBeamSpotCorr  = cms.untracked.bool(False)
 process.treeCreator.muonLabel       = cms.untracked.InputTag("cleanLayer1Muons");
 process.treeCreator.electronLabel   = cms.untracked.InputTag("cleanLayer1Electrons");
 process.treeCreator.caloJetLabel    = cms.untracked.InputTag("cleanLayer1Jets");
@@ -86,12 +84,8 @@ process.treeCreator.muonIso         = cms.untracked.double(0.05);
 # PAT sequence modification
 process.patDefaultSequence.remove( process.countLayer1Objects )
 
-# Switch off old trigger matching
-from PhysicsTools.PatAlgos.tools.trigTools import switchOffTriggerMatchingOld
-switchOffTriggerMatchingOld( process )
-
 #process.content = cms.EDAnalyzer("EventContentAnalyzer")
-process.p = cms.Path( process.softMuonByPtBJetTags*process.patDefaultSequence*process.LJFilter*process.treeCreator )
+process.p = cms.Path( process.patDefaultSequence*process.LJFilter*process.treeCreator )
 
 # Output module configuration
 process.out = cms.OutputModule("PoolOutputModule",
@@ -107,13 +101,9 @@ process.out.outputCommands += patEventContent
 process.out.outputCommands += [
     # GEN
     'keep recoGenParticles_genParticles_*_*',
-    'keep *_genEventScale_*_*',
-    'keep *_genEventWeight_*_*',
-    'keep *_genEventPdfInfo_*_*',
-    'keep *_genMet_*_*',
+    'keep GenEventInfoProduct_generator_*_*',
+    'keep *_genMetTrue_*_*',
     'keep *_iterativeCone5GenJets_*_*',
-    # PFlow
-    'keep *_pfMet_*_*',
     # TRIGGER
     'keep edmTriggerResults_TriggerResults_*_HLT',
     'keep *_hltTriggerSummaryAOD_*_*',
@@ -123,4 +113,3 @@ process.out.outputCommands += [
     'drop *_cleanLayer1Photons_*_*',
     'drop *_cleanLayer1Taus_*_*', 
     'drop *_cleanLayer1Hemispheres_*_*' ]
-

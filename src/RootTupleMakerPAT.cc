@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.3 2009/09/17 16:37:01 ferencek Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.4 2009/09/27 21:18:29 ferencek Exp $
 //
 //
 
@@ -268,10 +268,18 @@ RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
   m_pthat=-999.;
   m_weight=-999.;              
 
-  genMET=-999.;
-  genMETPhi=-999.;
-  caloMET=-999.;
-  caloMETPhi=-999.;
+  genMET = -99.;
+  genMETPhi = -99.;
+  genSumET = -99.;
+  caloMET = -99.;
+  caloMETPhi = -99.;
+  caloSumET = -99.;
+  tcMET = -99.;
+  tcMETPhi = -99.;
+  tcSumET = -99.;
+  pfMET = -99.;
+  pfMETPhi = -99.;
+  pfSumET = -99.;
 
 }
 
@@ -522,7 +530,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
         // try to convert to pat::Muons
         const pat::Muon *muon = dynamic_cast<const pat::Muon *>(&*muons[i]);
         if (muon) {
-           if (muon->isGood(reco::Muon::GlobalMuonPromptTight) 
+           if (muon->muonID("GlobalMuonPromptTight") 
                && ((muon->trackIso()+muon->ecalIso()+muon->hcalIso())/muon->pt())<muonIso_
                && muon->pt()>muonPt_) overlaps = 1;
         }
@@ -670,7 +678,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
         // try to convert to pat::Muons
         const pat::Muon *muon = dynamic_cast<const pat::Muon *>(&*muons[i]);
         if (muon) {
-           if (muon->isGood(reco::Muon::GlobalMuonPromptTight) 
+           if (muon->muonID("GlobalMuonPromptTight") 
                && ((muon->trackIso()+muon->ecalIso()+muon->hcalIso())/muon->pt())<muonIso_
                && muon->pt()>muonPt_) overlaps = overlaps | 1<<5;
         }
@@ -698,20 +706,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     cout << "CaloJets filled" << endl;
 
   ////////// MET and GenMET
-  //////////////////////////////////////////////////////////////////////////////////////////
-  genMET = -99.;
-  genMETPhi = -99.;
-  genSumET = -99.;
-  caloMET = -99.;
-  caloMETPhi = -99.;
-  caloSumET = -99.;
-  tcMET = -99.;
-  tcMETPhi = -99.;
-  tcSumET = -99.;
-  pfMET = -99.;
-  pfMETPhi = -99.;
-  pfSumET = -99.;
-  
+  //////////////////////////////////////////////////////////////////////////////////////////  
   Handle<std::vector<pat::MET> > recoMET;
   iEvent.getByLabel("layer1METs", recoMET);
 
@@ -739,11 +734,11 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     tcSumET = recomettc.sumEt();
   }
   
-  Handle<std::vector<reco::PFMET> > recoMETpf;
-  iEvent.getByLabel("pfMet", recoMETpf);
+  Handle<std::vector<pat::MET> > recoMETpf;
+  iEvent.getByLabel("layer1METsPF", recoMETpf);
 
   if(recoMETpf.isValid()) {
-    const reco::PFMET& recometpf = (*recoMETpf)[0];
+    const pat::MET& recometpf = (*recoMETpf)[0];
     pfMET = recometpf.et();
     pfMETPhi = recometpf.phi();
     pfSumET = recometpf.sumEt();
@@ -805,7 +800,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       int passIso = 0;
       if (relIso<muonIso_) passIso = 1;
       int passID = 0;
-      if (muon->isGood(reco::Muon::GlobalMuonPromptTight)) passID = 1;
+      if (muon->muonID("GlobalMuonPromptTight")) passID = 1;
       
       muonEta[muonCount]        = muon->eta();
       muonPhi[muonCount]        = muon->phi();
