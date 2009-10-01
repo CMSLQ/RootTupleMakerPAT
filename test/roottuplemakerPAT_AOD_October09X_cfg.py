@@ -56,10 +56,19 @@ restrictInputToAOD(process, ['All'])
 
 # Skim definition
 process.load("Leptoquarks.LeptonJetFilter.leptonjetfilter_cfi")
+process.LJFilterPAT = process.LJFilter.clone()
+# Primary skim 
+process.LJFilter.muLabel = 'muons'
+process.LJFilter.elecLabel = 'gsfElectrons'
+process.LJFilter.jetLabel = 'iterativeCone5CaloJets'
 process.LJFilter.counteitherleptontype = False
 process.LJFilter.muonsMin = -1
-process.LJFilter.useElecID = True
 process.LJFilter.elecPT = 30.
+# Secondary skim
+process.LJFilterPAT.counteitherleptontype = False
+process.LJFilterPAT.muonsMin = -1
+process.LJFilterPAT.useElecID = True
+process.LJFilterPAT.elecPT = 30.
 
 # RootTupleMaker
 process.treeCreator = cms.EDAnalyzer('RootTupleMakerPAT')
@@ -89,4 +98,4 @@ process.treeCreator.muonIso         = cms.untracked.double(0.05);
 process.patDefaultSequence.remove( process.countLayer1Objects )
 
 # Path definition
-process.p = cms.Path( process.patDefaultSequence*process.LJFilter*process.treeCreator )
+process.p = cms.Path( process.LJFilter*process.patDefaultSequence*process.LJFilterPAT*process.treeCreator )
