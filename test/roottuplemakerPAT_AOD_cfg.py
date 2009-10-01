@@ -54,8 +54,11 @@ process.gamIsoDepositEcalFromHits.ExtractorPSet.endcapEcalHits = cms.InputTag("r
 from PhysicsTools.PatAlgos.tools.coreTools import *
 restrictInputToAOD(process, ['All'])
 
-# Skimming
+# Skim definition
 process.load("Leptoquarks.LeptonJetFilter.leptonjetfilter_cfi")
+process.LJFilterPAT = process.LJFilter.clone()
+process.LJFilterPAT.useMuID = True
+process.LJFilterPAT.useElecID = True
 
 # RootTupleMaker
 process.treeCreator = cms.EDAnalyzer('RootTupleMakerPAT')
@@ -85,7 +88,7 @@ process.treeCreator.muonIso         = cms.untracked.double(0.05);
 process.patDefaultSequence.remove( process.countLayer1Objects )
 
 #process.content = cms.EDAnalyzer("EventContentAnalyzer")
-process.p = cms.Path( process.patDefaultSequence*process.LJFilter*process.treeCreator )
+process.p = cms.Path( process.patDefaultSequence*process.LJFilterPAT*process.treeCreator )
 
 # Output module configuration
 process.out = cms.OutputModule("PoolOutputModule",
