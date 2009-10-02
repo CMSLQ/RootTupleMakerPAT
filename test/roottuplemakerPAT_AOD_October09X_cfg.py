@@ -98,4 +98,5 @@ process.treeCreator.muonIso         = cms.untracked.double(0.05);
 process.patDefaultSequence.remove( process.countLayer1Objects )
 
 # Path definition
-process.p = cms.Path( process.LJFilter*process.patDefaultSequence*process.LJFilterPAT*process.treeCreator )
+process.p = cms.Path( process.LJFilter*process.patDefaultSequence*process.treeCreator )
+#process.p = cms.Path( process.LJFilter*process.patDefaultSequence*process.LJFilterPAT*process.treeCreator )
