@@ -8,7 +8,7 @@ process = cms.Process("PAT")
 # the size of the output by prescaling the report of the event number
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
-process.MessageLogger.cerr.default.limit = 100
+process.MessageLogger.cerr.default.limit = 10
 #################################################################
 process.MessageLogger.cerr.threshold = 'INFO'
 process.MessageLogger.categories.append('PATSummaryTables')
@@ -18,7 +18,7 @@ process.MessageLogger.cerr.INFO = cms.untracked.PSet(
 )
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
-# source
+# Source
 process.source = cms.Source("PoolSource", 
      fileNames = cms.untracked.vstring('file:input_file.root')
 )
@@ -31,20 +31,25 @@ process.TFileService = cms.Service("TFileService",
 # PAT Layer 0+1
 process.load("PhysicsTools.PatAlgos.patSequences_cff")
 
-## Load additional RECO config
+# Electron and jet cleaning deltaR parameters
+process.cleanLayer1Electrons.checkOverlaps.muons.deltaR = 0.3
+process.cleanLayer1Jets.checkOverlaps.muons.deltaR = 0.5
+process.cleanLayer1Jets.checkOverlaps.electrons.deltaR = 0.5
+
+# Load additional RECO config
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = cms.string('IDEAL_V12::All')
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
-# add tcMET
+# Add tcMET
 from PhysicsTools.PatAlgos.tools.metTools import *
 addTcMET(process, 'TC')
 
-## b-tagging general configuration
+# b-tagging general configuration
 process.load("RecoBTag.Configuration.RecoBTag_cff")
 
-## configure the softMuonByPt ESProducer and EDProducer
+# Configure the softMuonByPt ESProducer and EDProducer
 process.load("RecoBTag.SoftLepton.softLeptonByPtES_cfi")
 process.load("RecoBTag.SoftLepton.softMuonByPtBJetTags_cfi")
 
@@ -56,8 +61,13 @@ process.allLayer1Jets.discriminatorSources = cms.VInputTag(
     cms.InputTag("trackCountingHighEffBJetTags"),
 )
 
-# Skimming
+# Skim definition
 process.load("Leptoquarks.LeptonJetFilter.leptonjetfilter_cfi")
+process.LJFilter.muLabel = 'muons'
+process.LJFilter.elecLabel = 'pixelMatchGsfElectrons'
+process.LJFilter.jetLabel = 'iterativeCone5CaloJets'
+process.LJFilter.muPT = 10.
+process.LJFilter.elecPT = 30.
 
 # RootTupleMaker
 process.treeCreator = cms.EDAnalyzer('RootTupleMakerPAT')
@@ -67,7 +77,7 @@ process.treeCreator.maxelectrons    = cms.untracked.int32(10)
 process.treeCreator.maxcalojets     = cms.untracked.int32(10)
 process.treeCreator.maxmuons        = cms.untracked.int32(10)
 process.treeCreator.debug           = cms.untracked.bool(False)
-# overall luminosity normalization  (in pb-1)   
+# Overall luminosity normalization  (in pb-1)   
 process.treeCreator.luminosity      = cms.untracked.double(100)
 process.treeCreator.numEvents       = cms.untracked.int32(10)
 process.treeCreator.saveTrigger     = cms.untracked.bool(True)
@@ -91,36 +101,36 @@ from PhysicsTools.PatAlgos.tools.trigTools import switchOffTriggerMatchingOld
 switchOffTriggerMatchingOld( process )
 
 #process.content = cms.EDAnalyzer("EventContentAnalyzer")
-process.p = cms.Path( process.softMuonByPtBJetTags*process.patDefaultSequence*process.LJFilter*process.treeCreator )
+process.p = cms.Path( process.LJFilter*process.softMuonByPtBJetTags*process.patDefaultSequence*process.treeCreator )
 
-# Output module configuration
-process.out = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string('PATTuple.root'),
-    SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p') ),
-    dropMetaDataForDroppedData = cms.untracked.bool(True),
-    outputCommands = cms.untracked.vstring('drop *')
-)
-process.outpath = cms.EndPath(process.out)
-# save PAT Layer 1 output
-from PhysicsTools.PatAlgos.patEventContent_cff import *
-process.out.outputCommands += patEventContent
-process.out.outputCommands += [
-    # GEN
-    'keep recoGenParticles_genParticles_*_*',
-    'keep *_genEventScale_*_*',
-    'keep *_genEventWeight_*_*',
-    'keep *_genEventPdfInfo_*_*',
-    'keep *_genMet_*_*',
-    'keep *_iterativeCone5GenJets_*_*',
-    # PFlow
-    'keep *_pfMet_*_*',
-    # TRIGGER
-    'keep edmTriggerResults_TriggerResults_*_HLT',
-    'keep *_hltTriggerSummaryAOD_*_*',
-    # PAT
-    'keep *_layer1METs*_*_*',
-    # PAT (dropped)
-    'drop *_cleanLayer1Photons_*_*',
-    'drop *_cleanLayer1Taus_*_*', 
-    'drop *_cleanLayer1Hemispheres_*_*' ]
+# Output module configuration (to enable the PATtuple output, uncomment the lines below)
+#process.out = cms.OutputModule("PoolOutputModule",
+    #fileName = cms.untracked.string('PATtuple.root'),
+    #SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p') ),
+    #dropMetaDataForDroppedData = cms.untracked.bool(True),
+    #outputCommands = cms.untracked.vstring('drop *')
+#)
+#process.outpath = cms.EndPath(process.out)
+## save PAT Layer 1 output
+#from PhysicsTools.PatAlgos.patEventContent_cff import *
+#process.out.outputCommands += patEventContent
+#process.out.outputCommands += [
+    ## GEN
+    #'keep recoGenParticles_genParticles_*_*',
+    #'keep *_genEventScale_*_*',
+    #'keep *_genEventWeight_*_*',
+    #'keep *_genEventPdfInfo_*_*',
+    #'keep *_genMet_*_*',
+    #'keep *_iterativeCone5GenJets_*_*',
+    ## PFlow
+    #'keep *_pfMet_*_*',
+    ## TRIGGER
+    #'keep edmTriggerResults_TriggerResults_*_HLT',
+    #'keep *_hltTriggerSummaryAOD_*_*',
+    ## PAT
+    #'keep *_layer1METs*_*_*',
+    ## PAT (dropped)
+    #'drop *_cleanLayer1Photons_*_*',
+    #'drop *_cleanLayer1Taus_*_*', 
+    #'drop *_cleanLayer1Hemispheres_*_*' ]
 
