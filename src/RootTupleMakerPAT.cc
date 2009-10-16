@@ -126,6 +126,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Int_t                eleCharge[MAXELECTRONS];
       Float_t              eleCaloEnergy[MAXELECTRONS];
       Float_t              eleHoE[MAXELECTRONS];
+      Float_t              eleSigmaEE[MAXELECTRONS];
       Float_t              eleSigmaIEIE[MAXELECTRONS];
       Float_t              eleDeltaPhiTrkSC[MAXELECTRONS];
       Float_t              eleDeltaEtaTrkSC[MAXELECTRONS];
@@ -337,6 +338,7 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("eleCharge",&eleCharge,"eleCharge[eleCount]/I");
   m_tree->Branch("eleCaloEnergy",&eleCaloEnergy,"eleCaloEnergy[eleCount]/F");
   m_tree->Branch("eleHoE",&eleHoE,"eleHoE[eleCount]/F");
+  m_tree->Branch("eleSigmaEE",&eleSigmaEE,"eleSigmaEE[eleCount]/F");
   m_tree->Branch("eleSigmaIEIE",&eleSigmaIEIE,"eleSigmaIEIE[eleCount]/F");
   m_tree->Branch("eleDeltaPhiTrkSC",&eleDeltaPhiTrkSC,"eleDeltaPhiTrkSC[eleCount]/F");
   m_tree->Branch("eleDeltaEtaTrkSC",&eleDeltaEtaTrkSC,"eleDeltaEtaTrkSC[eleCount]/F");
@@ -557,6 +559,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
       //////////ID variables
       eleHoE[eleCount]=electron->hadronicOverEm();
+      eleSigmaEE[eleCount]=electron->scSigmaEtaEta();
       eleSigmaIEIE[eleCount]=electron->scSigmaIEtaIEta();
       eleDeltaPhiTrkSC[eleCount]=electron->deltaPhiSuperClusterTrackAtVtx();
       eleDeltaEtaTrkSC[eleCount]=electron->deltaEtaSuperClusterTrackAtVtx();
