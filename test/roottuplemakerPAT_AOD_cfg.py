@@ -13,7 +13,8 @@ process.MessageLogger.cerr.default.limit = 100
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 # source
-process.source = cms.Source("PoolSource", 
+process.source = cms.Source("PoolSource",
+     duplicateCheckMode = cms.untracked.string('noDuplicateCheck'), 
      fileNames = cms.untracked.vstring('file:input_file.root')
 )
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
