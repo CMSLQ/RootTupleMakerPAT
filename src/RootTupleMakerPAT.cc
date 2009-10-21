@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.4 2009/09/27 21:18:29 ferencek Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.5 2009/09/28 07:54:58 ferencek Exp $
 //
 //
 
@@ -125,20 +125,19 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              eleEnergy[MAXELECTRONS];
       Int_t                eleCharge[MAXELECTRONS];
       Float_t              eleCaloEnergy[MAXELECTRONS];
-
       Float_t              eleHoE[MAXELECTRONS];
       Float_t              eleSigmaEE[MAXELECTRONS];
+      Float_t              eleSigmaIEIE[MAXELECTRONS];
       Float_t              eleDeltaPhiTrkSC[MAXELECTRONS];
       Float_t              eleDeltaEtaTrkSC[MAXELECTRONS];
-
+      Int_t                eleClassif[MAXELECTRONS];
+      Int_t                elePassID[MAXELECTRONS];
       Float_t              eleTrkIso[MAXELECTRONS];
       Float_t              eleEcalIso[MAXELECTRONS];
       Float_t              eleHcalIso[MAXELECTRONS];
       Float_t              eleRelIso[MAXELECTRONS];
       Int_t                elePassIso[MAXELECTRONS];
       Int_t                eleOverlaps[MAXELECTRONS];
-      Int_t                eleClassif[MAXELECTRONS];
-      Float_t              elePassID[MAXELECTRONS];
 
       // GenJets
       Int_t                genJetCount;
@@ -348,16 +347,17 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("eleCaloEnergy",&eleCaloEnergy,"eleCaloEnergy[eleCount]/F");
   m_tree->Branch("eleHoE",&eleHoE,"eleHoE[eleCount]/F");
   m_tree->Branch("eleSigmaEE",&eleSigmaEE,"eleSigmaEE[eleCount]/F");
+  m_tree->Branch("eleSigmaIEIE",&eleSigmaIEIE,"eleSigmaIEIE[eleCount]/F");
   m_tree->Branch("eleDeltaPhiTrkSC",&eleDeltaPhiTrkSC,"eleDeltaPhiTrkSC[eleCount]/F");
   m_tree->Branch("eleDeltaEtaTrkSC",&eleDeltaEtaTrkSC,"eleDeltaEtaTrkSC[eleCount]/F");
+  m_tree->Branch("eleClassif",&eleClassif,"eleClassif[eleCount]/I");
+  m_tree->Branch("elePassID",&elePassID,"elePassID[eleCount]/I");
   m_tree->Branch("eleTrkIso",&eleTrkIso,"eleTrkIso[eleCount]/F");
   m_tree->Branch("eleEcalIso",&eleEcalIso,"eleEcalIso[eleCount]/F");
   m_tree->Branch("eleHcalIso",&eleHcalIso,"eleHcalIso[eleCount]/F");
   m_tree->Branch("eleRelIso",&eleRelIso,"eleRelIso[eleCount]/F");
   m_tree->Branch("elePassIso",&elePassIso,"elePassIso[eleCount]/I");
   m_tree->Branch("eleOverlaps",&eleOverlaps,"eleOverlaps[eleCount]/I");
-  m_tree->Branch("eleClassif",&eleClassif,"eleClassif[eleCount]/I");
-  m_tree->Branch("elePassID",&elePassID,"elePassID[eleCount]/F");
 
   m_tree->Branch("genJetCount",&genJetCount,"genJetCount/I");
   m_tree->Branch("genJetEta",&genJetEta,"genJetEta[genJetCount]/F");
@@ -568,6 +568,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       //////////ID variables
       eleHoE[eleCount]=electron->hadronicOverEm();
       eleSigmaEE[eleCount]=electron->scSigmaEtaEta();
+      eleSigmaIEIE[eleCount]=electron->scSigmaIEtaIEta();
       eleDeltaPhiTrkSC[eleCount]=electron->deltaPhiSuperClusterTrackAtVtx();
       eleDeltaEtaTrkSC[eleCount]=electron->deltaEtaSuperClusterTrackAtVtx();
       eleClassif[eleCount]=electron->classification();
@@ -706,7 +707,20 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     cout << "CaloJets filled" << endl;
 
   ////////// MET and GenMET
-  //////////////////////////////////////////////////////////////////////////////////////////  
+  //////////////////////////////////////////////////////////////////////////////////////////
+  genMET = -99.;
+  genMETPhi = -99.;
+  genSumET = -99.;
+  caloMET = -99.;
+  caloMETPhi = -99.;
+  caloSumET = -99.;
+  tcMET = -99.;
+  tcMETPhi = -99.;
+  tcSumET = -99.;
+  pfMET = -99.;
+  pfMETPhi = -99.;
+  pfSumET = -99.;
+  
   Handle<std::vector<pat::MET> > recoMET;
   iEvent.getByLabel("layer1METs", recoMET);
 

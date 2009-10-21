@@ -56,9 +56,11 @@ restrictInputToAOD(process, ['All'])
 
 # Skim definition
 process.load("Leptoquarks.LeptonJetFilter.leptonjetfilter_cfi")
-process.LJFilterPAT = process.LJFilter.clone()
-process.LJFilterPAT.useMuID = True
-process.LJFilterPAT.useElecID = True
+process.LJFilter.muLabel = 'muons'
+process.LJFilter.elecLabel = 'gsfElectrons'
+process.LJFilter.jetLabel = 'iterativeCone5CaloJets'
+process.LJFilter.muPT = 10.
+process.LJFilter.elecPT = 30.
 
 # RootTupleMaker
 process.treeCreator = cms.EDAnalyzer('RootTupleMakerPAT')
@@ -81,38 +83,38 @@ process.treeCreator.caloJetLabel    = cms.untracked.InputTag("cleanLayer1Jets");
 process.treeCreator.genJetLabel     = cms.untracked.InputTag("iterativeCone5GenJets");
 process.treeCreator.electronPt      = cms.untracked.double(30.);
 process.treeCreator.electronIso     = cms.untracked.double(0.1);
-process.treeCreator.muonPt          = cms.untracked.double(20.);
+process.treeCreator.muonPt          = cms.untracked.double(10.);
 process.treeCreator.muonIso         = cms.untracked.double(0.05);
 
 # PAT sequence modification
 process.patDefaultSequence.remove( process.countLayer1Objects )
 
 #process.content = cms.EDAnalyzer("EventContentAnalyzer")
-process.p = cms.Path( process.patDefaultSequence*process.LJFilterPAT*process.treeCreator )
+process.p = cms.Path( process.LJFilter*process.patDefaultSequence*process.treeCreator )
 
-# Output module configuration
-process.out = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string('PATTuple.root'),
-    SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p') ),
-    dropMetaDataForDroppedData = cms.untracked.bool(True),
-    outputCommands = cms.untracked.vstring('drop *')
-)
-process.outpath = cms.EndPath(process.out)
-# save PAT Layer 1 output
-from PhysicsTools.PatAlgos.patEventContent_cff import *
-process.out.outputCommands += patEventContent
-process.out.outputCommands += [
-    # GEN
-    'keep recoGenParticles_genParticles_*_*',
-    'keep GenEventInfoProduct_generator_*_*',
-    'keep *_genMetTrue_*_*',
-    'keep *_iterativeCone5GenJets_*_*',
-    # TRIGGER
-    'keep edmTriggerResults_TriggerResults_*_HLT',
-    'keep *_hltTriggerSummaryAOD_*_*',
-    # PAT
-    'keep *_layer1METs*_*_*',
-    # PAT (dropped)
-    'drop *_cleanLayer1Photons_*_*',
-    'drop *_cleanLayer1Taus_*_*', 
-    'drop *_cleanLayer1Hemispheres_*_*' ]
+# Output module configuration (to enable the PATtuple output, uncomment the lines below)
+#process.out = cms.OutputModule("PoolOutputModule",
+    #fileName = cms.untracked.string('PATTuple.root'),
+    #SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p') ),
+    #dropMetaDataForDroppedData = cms.untracked.bool(True),
+    #outputCommands = cms.untracked.vstring('drop *')
+#)
+#process.outpath = cms.EndPath(process.out)
+## save PAT Layer 1 output
+#from PhysicsTools.PatAlgos.patEventContent_cff import *
+#process.out.outputCommands += patEventContent
+#process.out.outputCommands += [
+    ## GEN
+    #'keep recoGenParticles_genParticles_*_*',
+    #'keep GenEventInfoProduct_generator_*_*',
+    #'keep *_genMetTrue_*_*',
+    #'keep *_iterativeCone5GenJets_*_*',
+    ## TRIGGER
+    #'keep edmTriggerResults_TriggerResults_*_HLT',
+    #'keep *_hltTriggerSummaryAOD_*_*',
+    ## PAT
+    #'keep *_layer1METs*_*_*',
+    ## PAT (dropped)
+    #'drop *_cleanLayer1Photons_*_*',
+    #'drop *_cleanLayer1Taus_*_*', 
+    #'drop *_cleanLayer1Hemispheres_*_*' ]
