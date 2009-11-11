@@ -74,17 +74,18 @@ extern "C" {
 // Muon stuff
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
-//#include "RecoMuon/MuonIdentification/interface/IdGlobalFunctions.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
 
-//Electron stuff
+// Electron stuff
 #include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
 #include "DataFormats/EgammaCandidates/interface/GsfElectronFwd.h"
 #include "DataFormats/PatCandidates/interface/Electron.h"
+#include "DataFormats/EgammaReco/interface/SuperCluster.h"
+#include "DataFormats/EgammaReco/interface/SuperClusterFwd.h"
 
-//Electron ID
+// Electron ID
 #include "RecoEgamma/ElectronIdentification/interface/CutBasedElectronID.h"
 #include "RecoEgamma/ElectronIdentification/interface/ElectronIDAlgo.h"
 #include "AnalysisDataFormats/Egamma/interface/ElectronID.h"
@@ -103,7 +104,7 @@ extern "C" {
 #include "Geometry/Records/interface/CaloGeometryRecord.h"
 #include "Geometry/CaloEventSetup/interface/CaloTopologyRecord.h"
 
-//Electron Isolation
+// Electron Isolation
 #include "DataFormats/Candidate/interface/CandAssociation.h"
 #include "DataFormats/RecoCandidate/interface/RecoCandidate.h"
 #include "DataFormats/EgammaCandidates/interface/GsfElectronIsoCollection.h"
@@ -115,6 +116,8 @@ extern "C" {
 #include "DataFormats/PatCandidates/interface/Jet.h"
 #include "DataFormats/PatCandidates/interface/MET.h"
 #include "DataFormats/PatCandidates/interface/Electron.h"
+#include "DataFormats/PatCandidates/interface/Photon.h"
+
 
 // HLT
 #include "FWCore/Framework/interface/TriggerNamesService.h"
@@ -130,6 +133,7 @@ extern "C" {
 #define MAXGENPARTICLES  2000
 #define MAXHLTBITS    200
 #define MAXELECTRONS  100
+#define MAXSC         100
 #define MAXGENJETS    100
 #define MAXCALOJETS   100
 #define MAXMUONS      100

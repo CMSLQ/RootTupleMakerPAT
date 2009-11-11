@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.5 2009/09/28 07:54:58 ferencek Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.6 2009/10/21 09:48:56 ferencek Exp $
 //
 //
 
@@ -59,6 +59,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       int                  maxgenparticles_;
       int                  maxgenjets_;
       int                  maxelectrons_;
+      int                  maxsuperclusters_;
       int                  maxcalojets_;
       int                  maxmuons_;
       bool                 debug_;
@@ -70,7 +71,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       bool                 usePDFweight_;
       bool                 doBeamSpotCorr_;
       std::string          PDFset_;
-      edm::InputTag        muonLabel_, electronLabel_, caloJetLabel_, genJetLabel_;
+      edm::InputTag        muonLabel_, electronLabel_, caloJetLabel_, genJetLabel_, scLabel_;
       double               electronPt_, electronIso_, muonPt_, muonIso_;
 
       //Output RootNtuple
@@ -138,6 +139,15 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              eleRelIso[MAXELECTRONS];
       Int_t                elePassIso[MAXELECTRONS];
       Int_t                eleOverlaps[MAXELECTRONS];
+      
+      // SuperClusters
+      Int_t                scCount;
+      Float_t              scEta[MAXSC];
+      Float_t              scPhi[MAXSC];
+      Float_t              scRawEnergy[MAXSC];
+      Float_t              scEtaWidth[MAXSC];
+      Float_t              scPhiWidth[MAXSC];
+      Float_t              scClusterSize[MAXSC];
 
       // GenJets
       Int_t                genJetCount;
@@ -222,7 +232,8 @@ RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
   //get parameters from cfg file
   maxgenparticles_   = iConfig.getUntrackedParameter<int>("maxgenparticles",100); 
   maxgenjets_        = iConfig.getUntrackedParameter<int>("maxgenjets",10); 
-  maxelectrons_      = iConfig.getUntrackedParameter<int>("maxelectrons",5); 
+  maxelectrons_      = iConfig.getUntrackedParameter<int>("maxelectrons",5);
+  maxsuperclusters_  = iConfig.getUntrackedParameter<int>("maxsuperclusters",10);
   maxcalojets_       = iConfig.getUntrackedParameter<int>("maxcalojets",10); 
   maxmuons_          = iConfig.getUntrackedParameter<int>("maxmuons",5); 
 
@@ -241,6 +252,7 @@ RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
   
   muonLabel_     = iConfig.getUntrackedParameter<edm::InputTag>("muonLabel",edm::InputTag("cleanLayer1Muons"));
   electronLabel_ = iConfig.getUntrackedParameter<edm::InputTag>("electronLabel",edm::InputTag("cleanLayer1Electrons"));
+  scLabel_       = iConfig.getUntrackedParameter<edm::InputTag>("superClusterLabel",edm::InputTag("hybridSuperClusters"));
   caloJetLabel_  = iConfig.getUntrackedParameter<edm::InputTag>("caloJetLabel",edm::InputTag("cleanLayer1Jets"));
   genJetLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("genJetLabel",edm::InputTag("sisCone5GenJets"));
   
@@ -358,6 +370,15 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("eleRelIso",&eleRelIso,"eleRelIso[eleCount]/F");
   m_tree->Branch("elePassIso",&elePassIso,"elePassIso[eleCount]/I");
   m_tree->Branch("eleOverlaps",&eleOverlaps,"eleOverlaps[eleCount]/I");
+  
+  m_tree->Branch("scCount",&scCount,"scCount/I");
+  m_tree->Branch("scEta",&scEta,"scEta[scCount]/F");
+  m_tree->Branch("scPhi",&scPhi,"scPhi[scCount]/F");
+  m_tree->Branch("scRawEnergy",&scRawEnergy,"scRawEnergy[scCount]/F");
+  m_tree->Branch("scEtaWidth",&scEta,"scEtaWidth[scCount]/F");
+  m_tree->Branch("scPhiWidth",&scPhi,"scPhiWidth[scCount]/F");
+  m_tree->Branch("scClusterSize",&scClusterSize,"scClusterSize[scCount]/F");
+
 
   m_tree->Branch("genJetCount",&genJetCount,"genJetCount/I");
   m_tree->Branch("genJetEta",&genJetEta,"genJetEta[genJetCount]/F");
@@ -519,6 +540,10 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   eleCount = 0;
   for( std::vector<pat::Electron>::const_iterator electron = electrons->begin(); electron != electrons->end();++electron ) 
     {
+      //if electron is not ECAL driven, continue
+      if(!electron->isEcalDriven())
+        continue;
+      
       //exit from loop when you reach the required number of electrons
       if(eleCount > maxelectrons_)
         break;
@@ -587,6 +612,26 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
  
     }
 
+  //////////// SuperClusters
+  //////////////////////////////////////////////////////////////////////
+  edm::Handle<SuperClusterCollection> superClusters;
+  iEvent.getByLabel(scLabel_, superClusters); 
+
+  scCount = 0;
+  for( SuperClusterCollection::const_iterator sc = superClusters->begin(); sc != superClusters->end();++sc ) 
+    {
+      if (scCount > maxsuperclusters_) break;
+      
+      scEta[scCount]=sc->eta();
+      scPhi[scCount]=sc->phi();
+      scRawEnergy[scCount]=sc->rawEnergy();
+      scEtaWidth[scCount]=sc->etaWidth();
+      scPhiWidth[scCount]=sc->phiWidth();
+      scClusterSize[scCount]=sc->clustersSize();
+
+      scCount++;
+    }
+
 
   //////////// Gen Particles
   //////////////////////////////////////////////////////////////////////////////////////////////
@@ -608,7 +653,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   edm::Handle<reco::GenJetCollection> genJets;
   iEvent.getByLabel(genJetLabel_, genJets);
   
-  genJetCount=0;
+  genJetCount = 0;
   for( GenJetCollection::const_iterator genjet = genJets->begin(); genjet != genJets->end();++genjet ) 
     {
       //exit from loop when you reach the required number of electrons
@@ -636,7 +681,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   edm::Handle<std::vector<pat::Jet> > caloJets;
   iEvent.getByLabel(caloJetLabel_, caloJets); 
 
-  caloJetCount=0;
+  caloJetCount = 0;
   for( std::vector<pat::Jet>::const_iterator calojet = caloJets->begin(); calojet != caloJets->end();++calojet ) 
     {
       //exit from loop when you reach the required number of electrons
