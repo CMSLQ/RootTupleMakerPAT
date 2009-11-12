@@ -17,7 +17,7 @@ process.source = cms.Source("PoolSource",
      duplicateCheckMode = cms.untracked.string('noDuplicateCheck'), 
      fileNames = cms.untracked.vstring('file:input_file.root')
 )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
 
 process.TFileService = cms.Service("TFileService",
     fileName = cms.string('RootTupleMakerPAT_output.root')
@@ -25,6 +25,18 @@ process.TFileService = cms.Service("TFileService",
 
 # Load the standard PAT config
 process.load("PhysicsTools.PatAlgos.patSequences_cff")
+
+# HEEPify the PAT electrons
+from SHarper.HEEPAnalyzer.HEEPSelectionCuts_cfi import *
+process.heepPatElectrons = cms.EDProducer("HEEPAttStatusToPAT",
+    eleLabel = cms.InputTag("allLayer1Electrons"),
+    barrelCuts = cms.PSet(heepBarrelCuts),
+    endcapCuts = cms.PSet(heepEndcapCuts)
+)
+
+# Add 'heepPatElectrons' in the right place and point 'selectedLayer1Electrons' to them
+process.patDefaultSequence.replace( process.allLayer1Electrons, process.allLayer1Electrons*process.heepPatElectrons )
+process.selectedLayer1Electrons.src = cms.InputTag("heepPatElectrons")
 
 # Electron and jet cleaning deltaR parameters
 process.cleanLayer1Electrons.checkOverlaps.muons.deltaR = 0.3
@@ -65,7 +77,7 @@ process.load("Leptoquarks.LeptonJetFilter.leptonjetfilter_cfi")
 process.LJFilter.muLabel = 'muons'
 process.LJFilter.elecLabel = 'gsfElectrons'
 process.LJFilter.jetLabel = 'iterativeCone5CaloJets'
-process.LJFilter.muPT = 10.
+process.LJFilter.muPT = 20.
 process.LJFilter.elecPT = 30.
 
 # RootTupleMaker
@@ -91,7 +103,7 @@ process.treeCreator.caloJetLabel    = cms.untracked.InputTag("cleanLayer1Jets");
 process.treeCreator.genJetLabel     = cms.untracked.InputTag("iterativeCone5GenJets");
 process.treeCreator.electronPt      = cms.untracked.double(30.);
 process.treeCreator.electronIso     = cms.untracked.double(0.1);
-process.treeCreator.muonPt          = cms.untracked.double(10.);
+process.treeCreator.muonPt          = cms.untracked.double(20.);
 process.treeCreator.muonIso         = cms.untracked.double(0.05);
 
 # PAT sequence modification

@@ -132,6 +132,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              eleDeltaPhiTrkSC[MAXELECTRONS];
       Float_t              eleDeltaEtaTrkSC[MAXELECTRONS];
       Int_t                eleClassif[MAXELECTRONS];
+      Int_t                eleHeepID[MAXELECTRONS];
       Int_t                elePassID[MAXELECTRONS];
       Float_t              eleTrkIso[MAXELECTRONS];
       Float_t              eleEcalIso[MAXELECTRONS];
@@ -363,6 +364,7 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("eleDeltaPhiTrkSC",&eleDeltaPhiTrkSC,"eleDeltaPhiTrkSC[eleCount]/F");
   m_tree->Branch("eleDeltaEtaTrkSC",&eleDeltaEtaTrkSC,"eleDeltaEtaTrkSC[eleCount]/F");
   m_tree->Branch("eleClassif",&eleClassif,"eleClassif[eleCount]/I");
+  m_tree->Branch("eleHeepID",&eleHeepID,"eleHeepID[eleCount]/I");
   m_tree->Branch("elePassID",&elePassID,"elePassID[eleCount]/I");
   m_tree->Branch("eleTrkIso",&eleTrkIso,"eleTrkIso[eleCount]/F");
   m_tree->Branch("eleEcalIso",&eleEcalIso,"eleEcalIso[eleCount]/F");
@@ -378,7 +380,6 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("scEtaWidth",&scEta,"scEtaWidth[scCount]/F");
   m_tree->Branch("scPhiWidth",&scPhi,"scPhiWidth[scCount]/F");
   m_tree->Branch("scClusterSize",&scClusterSize,"scClusterSize[scCount]/F");
-
 
   m_tree->Branch("genJetCount",&genJetCount,"genJetCount/I");
   m_tree->Branch("genJetEta",&genJetEta,"genJetEta[genJetCount]/F");
@@ -561,6 +562,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
         }
       }
 
+      int   heepID = electron->userInt("HEEPId");
       float trkIso = electron->trackIso();
       float ecalIso = electron->ecalIso();
       float hcalIso = electron->hcalIso();
@@ -575,12 +577,14 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
          bit 2: eidLoose
          bit 3: eidTight
          bit 4: eidRobustHighEnergy
+         bit 5: HEEPId
       */
       if (electron->electronID("eidRobustLoose")>0) passID = passID | 1<<0;
       if (electron->electronID("eidRobustTight")>0) passID = passID | 1<<1;
       if (electron->electronID("eidLoose")>0) passID = passID | 1<<2;
       if (electron->electronID("eidTight")>0) passID = passID | 1<<3;
       if (electron->electronID("eidRobustHighEnergy")>0) passID = passID | 1<<4;
+      if (heepID==0) passID = passID | 1<<5;
       
      // Set variables in RootNtuple
       eleEta[eleCount]=electron->eta();
@@ -597,6 +601,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       eleDeltaPhiTrkSC[eleCount]=electron->deltaPhiSuperClusterTrackAtVtx();
       eleDeltaEtaTrkSC[eleCount]=electron->deltaEtaSuperClusterTrackAtVtx();
       eleClassif[eleCount]=electron->classification();
+      eleHeepID[eleCount]=heepID;
       elePassID[eleCount]=passID;
 
       //////////Iso variables
@@ -696,6 +701,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
          bit 3: eidTight
          bit 4: eidRobustHighEnergy
          bit 5: GlobalMuonPromptTight
+         bit 6: HEEPId
       */
       const reco::CandidatePtrVector & electrons = calojet->overlaps("electrons");
       for (size_t i = 0; i < electrons.size(); ++i) {
@@ -717,6 +723,8 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
            if (electron->electronID("eidRobustHighEnergy")>0. 
                && ((electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->pt())<electronIso_
                && electron->pt()>electronPt_) overlaps = overlaps | 1<<4;
+           if (electron->userInt("HEEPId")==0
+               && electron->pt()>electronPt_) overlaps = overlaps | 1<<6;
         }
       }
       const reco::CandidatePtrVector & muons = calojet->overlaps("muons");
