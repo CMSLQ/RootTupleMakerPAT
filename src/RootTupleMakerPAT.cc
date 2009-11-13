@@ -562,7 +562,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
         }
       }
 
-      int   heepID = electron->userInt("HEEPId");
+      int heepID = electron->userInt("HEEPId");
       float trkIso = electron->trackIso();
       float ecalIso = electron->ecalIso();
       float hcalIso = electron->hcalIso();
@@ -700,8 +700,8 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
          bit 2: eidLoose
          bit 3: eidTight
          bit 4: eidRobustHighEnergy
-         bit 5: GlobalMuonPromptTight
-         bit 6: HEEPId
+         bit 5: HEEPId
+         bit 6: GlobalMuonPromptTight
       */
       const reco::CandidatePtrVector & electrons = calojet->overlaps("electrons");
       for (size_t i = 0; i < electrons.size(); ++i) {
@@ -724,7 +724,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
                && ((electron->trackIso()+electron->ecalIso()+electron->hcalIso())/electron->pt())<electronIso_
                && electron->pt()>electronPt_) overlaps = overlaps | 1<<4;
            if (electron->userInt("HEEPId")==0
-               && electron->pt()>electronPt_) overlaps = overlaps | 1<<6;
+               && electron->pt()>electronPt_) overlaps = overlaps | 1<<5;
         }
       }
       const reco::CandidatePtrVector & muons = calojet->overlaps("muons");
@@ -734,7 +734,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
         if (muon) {
            if (muon->muonID("GlobalMuonPromptTight") 
                && ((muon->trackIso()+muon->ecalIso()+muon->hcalIso())/muon->pt())<muonIso_
-               && muon->pt()>muonPt_) overlaps = overlaps | 1<<5;
+               && muon->pt()>muonPt_) overlaps = overlaps | 1<<6;
         }
       }
 
