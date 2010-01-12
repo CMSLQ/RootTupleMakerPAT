@@ -7,49 +7,34 @@ process = cms.Process("PAT")
 # if you run over many samples and you save the log, remember to reduce
 # the size of the output by prescaling the report of the event number
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
-process.MessageLogger.cerr.default.limit = 10
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.default.limit = 100
 #################################################################
-process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
+process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(False) )
 
-# Source
+# source
 process.source = cms.Source("PoolSource",
      duplicateCheckMode = cms.untracked.string('noDuplicateCheck'), 
-     fileNames = cms.untracked.vstring('file:input_file.root')
+     fileNames = cms.untracked.vstring(
+    'file:/store/user/santanas/LQ_ue_400_10TeV_eejj/LQ_ue_400_10TeV_eejj/3ccb14828a2cff1a3f1e1cd9ebf9b6b4/PYTHIA6_Exotica_LQ_ue_400_10TeV_eejj_cff_py_GEN_FASTSIM_1.root'
+    )
 )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 
 process.TFileService = cms.Service("TFileService",
     fileName = cms.string('RootTupleMakerPAT_output.root')
 )
 
-# Load the standard PAT config
+# load the standard PAT config
 process.load("PhysicsTools.PatAlgos.patSequences_cff")
 
-# HEEPify the PAT electrons
-from SHarper.HEEPAnalyzer.HEEPSelectionCuts_cfi import *
-process.heepPatElectrons = cms.EDProducer("HEEPAttStatusToPAT",
-    eleLabel = cms.InputTag("allLayer1Electrons"),
-    barrelCuts = cms.PSet(heepBarrelCuts),
-    endcapCuts = cms.PSet(heepEndcapCuts)
-)
-
-# Add 'heepPatElectrons' in the right place and point 'selectedLayer1Electrons' to them
-process.patDefaultSequence.replace( process.allLayer1Electrons, process.allLayer1Electrons*process.heepPatElectrons )
-process.selectedLayer1Electrons.src = cms.InputTag("heepPatElectrons")
-
-# Electron and jet cleaning deltaR parameters
-process.cleanLayer1Electrons.checkOverlaps.muons.deltaR = 0.3
-process.cleanLayer1Jets.checkOverlaps.muons.deltaR = 0.5
-process.cleanLayer1Jets.checkOverlaps.electrons.deltaR = 0.5
-
-# Load additional RECO config
+## Load additional RECO config
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = 'MC_31X_V3::All'
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
-# Add tcMET and pfMET
+# add tcMET and pfMET
 from PhysicsTools.PatAlgos.tools.metTools import *
 addTcMET(process, 'TC')
 addPfMET(process, 'PF')
@@ -62,13 +47,13 @@ process.allLayer1Jets.discriminatorSources = cms.VInputTag(
     cms.InputTag("trackCountingHighEffBJetTags"),
 )
 
-# Fix InputTags for ECAL IsoDeposits (to work with FastSim samples)
+# fix InputTags for ECAL IsoDeposits (to work with FastSim samples)
 process.eleIsoDepositEcalFromHits.ExtractorPSet.barrelEcalHits = cms.InputTag("reducedEcalRecHitsEB")
 process.eleIsoDepositEcalFromHits.ExtractorPSet.endcapEcalHits = cms.InputTag("reducedEcalRecHitsEE")
 process.gamIsoDepositEcalFromHits.ExtractorPSet.barrelEcalHits = cms.InputTag("reducedEcalRecHitsEB")
 process.gamIsoDepositEcalFromHits.ExtractorPSet.endcapEcalHits = cms.InputTag("reducedEcalRecHitsEE")
 
-# Load the coreTools of PAT
+# load the coreTools of PAT
 from PhysicsTools.PatAlgos.tools.coreTools import *
 restrictInputToAOD(process, ['All'])
 
@@ -77,7 +62,7 @@ process.load("Leptoquarks.LeptonJetFilter.leptonjetfilter_cfi")
 process.LJFilter.muLabel = 'muons'
 process.LJFilter.elecLabel = 'gsfElectrons'
 process.LJFilter.jetLabel = 'iterativeCone5CaloJets'
-process.LJFilter.muPT = 20.
+process.LJFilter.muPT = 10.
 process.LJFilter.elecPT = 30.
 
 # RootTupleMaker
@@ -85,11 +70,12 @@ process.treeCreator = cms.EDAnalyzer('RootTupleMakerPAT')
 process.treeCreator.maxgenparticles = cms.untracked.int32(25)
 process.treeCreator.maxgenjets      = cms.untracked.int32(10)
 process.treeCreator.maxelectrons    = cms.untracked.int32(10)
-process.treeCreator.maxsuperclusters = cms.untracked.int32(10)
+process.treeCreator.maxbarrelsuperclusters = cms.untracked.int32(30)
+process.treeCreator.maxendcapsuperclusters = cms.untracked.int32(30)
 process.treeCreator.maxcalojets     = cms.untracked.int32(10)
 process.treeCreator.maxmuons        = cms.untracked.int32(10)
 process.treeCreator.debug           = cms.untracked.bool(False)
-# Overall luminosity normalization  (in pb-1)   
+# overall luminosity normalization  (in pb-1)   
 process.treeCreator.luminosity      = cms.untracked.double(100)
 process.treeCreator.numEvents       = cms.untracked.int32(10)
 process.treeCreator.saveTrigger     = cms.untracked.bool(True)
@@ -98,12 +84,16 @@ process.treeCreator.PDFSet          = cms.untracked.string("/cteq61.LHgrid")
 process.treeCreator.doBeamSpotCorr  = cms.untracked.bool(False)
 process.treeCreator.muonLabel       = cms.untracked.InputTag("cleanLayer1Muons");
 process.treeCreator.electronLabel   = cms.untracked.InputTag("cleanLayer1Electrons");
-process.treeCreator.superClusterLabel = cms.untracked.InputTag("hybridSuperClusters");
 process.treeCreator.caloJetLabel    = cms.untracked.InputTag("cleanLayer1Jets");
 process.treeCreator.genJetLabel     = cms.untracked.InputTag("iterativeCone5GenJets");
+#from RecoEgamma/EgammaElectronProducers/python/ecalDrivenElectronSeeds_cfi.py
+process.treeCreator.ecalEBLabel     = cms.untracked.InputTag("reducedEcalRecHitsEB");
+process.treeCreator.ecalEELabel     = cms.untracked.InputTag("reducedEcalRecHitsEE");
+process.treeCreator.superClusterEELabel=cms.untracked.InputTag("multi5x5SuperClustersWithPreshower");
+process.treeCreator.superClusterEBLabel=cms.untracked.InputTag("hybridSuperClusters");
 process.treeCreator.electronPt      = cms.untracked.double(30.);
 process.treeCreator.electronIso     = cms.untracked.double(0.1);
-process.treeCreator.muonPt          = cms.untracked.double(20.);
+process.treeCreator.muonPt          = cms.untracked.double(10.);
 process.treeCreator.muonIso         = cms.untracked.double(0.05);
 
 # PAT sequence modification
@@ -114,7 +104,7 @@ process.p = cms.Path( process.LJFilter*process.patDefaultSequence*process.treeCr
 
 # Output module configuration (to enable the PATtuple output, uncomment the lines below)
 #process.out = cms.OutputModule("PoolOutputModule",
-    #fileName = cms.untracked.string('PATtuple.root'),
+    #fileName = cms.untracked.string('PATTuple.root'),
     #SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p') ),
     #dropMetaDataForDroppedData = cms.untracked.bool(True),
     #outputCommands = cms.untracked.vstring('drop *')

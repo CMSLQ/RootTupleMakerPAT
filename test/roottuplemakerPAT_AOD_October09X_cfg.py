@@ -14,8 +14,7 @@ process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(False) 
 
 # source
 process.source = cms.Source("PoolSource", 
-     fileNames = cms.untracked.vstring('file:/data/groups/LQ/FullSim/Fall09/QCD_EMEnriched/QCD_EMEnriched_Pt30to80_Summer09-MC_31X_V3_7TeV-v1_GEN-SIM-RECO.root')
-#     fileNames = cms.untracked.vstring('file:/data/groups/LQ/FullSim/Fall09/TTbar/TTbar_MC_31X_V3-v1_GEN_SIM_RECO.root')
+     fileNames = cms.untracked.vstring('file:inputFile.root')
 )
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
@@ -61,7 +60,7 @@ process.LJFilterPAT = process.LJFilter.clone()
 # Primary skim 
 process.LJFilter.muLabel = 'muons'
 process.LJFilter.elecLabel = 'gsfElectrons'
-process.LJFilter.jetLabel = 'antiKt5CaloJets'
+process.LJFilter.jetLabel = 'antikt5CaloJets'
 process.LJFilter.counteitherleptontype = False
 process.LJFilter.muonsMin = -1
 process.LJFilter.electronsMin = -1
