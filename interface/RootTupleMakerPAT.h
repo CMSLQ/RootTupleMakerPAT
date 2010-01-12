@@ -110,6 +110,12 @@ extern "C" {
 #include "DataFormats/EgammaCandidates/interface/GsfElectronIsoCollection.h"
 #include "DataFormats/EgammaCandidates/interface/GsfElectronIsoNumCollection.h"
 
+//Supercluster stuff
+#include "RecoEgamma/EgammaTools/interface/HoECalculator.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalClusterLazyTools.h"
+#include "RecoEgamma/EgammaIsolationAlgos/interface/EgammaRecHitIsolation.h"
+#include "DataFormats/RecoCandidate/interface/RecoEcalCandidate.h"
+
 // PAT stuff
 #include "DataFormats/Common/interface/View.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"

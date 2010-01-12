@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.6 2009/10/21 09:48:56 ferencek Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.9 2009/11/13 13:05:15 ferencek Exp $
 //
 //
 
@@ -59,7 +59,8 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       int                  maxgenparticles_;
       int                  maxgenjets_;
       int                  maxelectrons_;
-      int                  maxsuperclusters_;
+      int                  maxEBsuperclusters_;
+      int                  maxEEsuperclusters_;
       int                  maxcalojets_;
       int                  maxmuons_;
       bool                 debug_;
@@ -71,7 +72,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       bool                 usePDFweight_;
       bool                 doBeamSpotCorr_;
       std::string          PDFset_;
-      edm::InputTag        muonLabel_, electronLabel_, caloJetLabel_, genJetLabel_, scLabel_;
+      edm::InputTag        muonLabel_, electronLabel_, caloJetLabel_, genJetLabel_, scEBLabel_, scEELabel_, ecalEELabel_, ecalEBLabel_;
       double               electronPt_, electronIso_, muonPt_, muonIso_;
 
       //Output RootNtuple
@@ -140,7 +141,12 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              eleRelIso[MAXELECTRONS];
       Int_t                elePassIso[MAXELECTRONS];
       Int_t                eleOverlaps[MAXELECTRONS];
-      
+      Float_t              eleSCEta[MAXELECTRONS];
+      Float_t              eleSCPhi[MAXELECTRONS];
+      Float_t              eleSCRawEnergy[MAXELECTRONS];
+      Float_t              eleSCecalIso[MAXELECTRONS];
+  
+
       // SuperClusters
       Int_t                scCount;
       Float_t              scEta[MAXSC];
@@ -149,6 +155,9 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              scEtaWidth[MAXSC];
       Float_t              scPhiWidth[MAXSC];
       Float_t              scClusterSize[MAXSC];
+      Float_t              scHoE[MAXSC];
+      Float_t              scSigmaIEIE[MAXSC];
+      Float_t              scEcalIso[MAXSC];
 
       // GenJets
       Int_t                genJetCount;
@@ -234,7 +243,8 @@ RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
   maxgenparticles_   = iConfig.getUntrackedParameter<int>("maxgenparticles",100); 
   maxgenjets_        = iConfig.getUntrackedParameter<int>("maxgenjets",10); 
   maxelectrons_      = iConfig.getUntrackedParameter<int>("maxelectrons",5);
-  maxsuperclusters_  = iConfig.getUntrackedParameter<int>("maxsuperclusters",10);
+  maxEBsuperclusters_  = iConfig.getUntrackedParameter<int>("maxEBsuperclusters",20);
+  maxEEsuperclusters_  = iConfig.getUntrackedParameter<int>("maxEEsuperclusters",10);
   maxcalojets_       = iConfig.getUntrackedParameter<int>("maxcalojets",10); 
   maxmuons_          = iConfig.getUntrackedParameter<int>("maxmuons",5); 
 
@@ -253,9 +263,12 @@ RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
   
   muonLabel_     = iConfig.getUntrackedParameter<edm::InputTag>("muonLabel",edm::InputTag("cleanLayer1Muons"));
   electronLabel_ = iConfig.getUntrackedParameter<edm::InputTag>("electronLabel",edm::InputTag("cleanLayer1Electrons"));
-  scLabel_       = iConfig.getUntrackedParameter<edm::InputTag>("superClusterLabel",edm::InputTag("hybridSuperClusters"));
+  scEBLabel_       = iConfig.getUntrackedParameter<edm::InputTag>("superClusterEBLabel",edm::InputTag("hybridSuperClusters"));
+  scEELabel_       = iConfig.getUntrackedParameter<edm::InputTag>("superClusterEELabel",edm::InputTag("multi5x5SuperClustersWithPreshower"));
   caloJetLabel_  = iConfig.getUntrackedParameter<edm::InputTag>("caloJetLabel",edm::InputTag("cleanLayer1Jets"));
   genJetLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("genJetLabel",edm::InputTag("sisCone5GenJets"));
+  ecalEELabel_   = iConfig.getUntrackedParameter<edm::InputTag>("ecalEELabel",edm::InputTag("reducedEcalRecHitsEE")); 
+  ecalEBLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("ecalEBLabel",edm::InputTag("reducedEcalRecHitsEB")); 
   
   electronPt_    = iConfig.getUntrackedParameter<double>("electronPt",30.);
   electronIso_   = iConfig.getUntrackedParameter<double>("electronIso",0.1);
@@ -372,6 +385,10 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("eleRelIso",&eleRelIso,"eleRelIso[eleCount]/F");
   m_tree->Branch("elePassIso",&elePassIso,"elePassIso[eleCount]/I");
   m_tree->Branch("eleOverlaps",&eleOverlaps,"eleOverlaps[eleCount]/I");
+  m_tree->Branch("eleSCEta",&eleSCEta,"eleSCEta[eleCount]/F");
+  m_tree->Branch("eleSCPhi",&eleSCPhi,"eleSCPhi[eleCount]/F");
+  m_tree->Branch("eleSCRawEnergy",&eleSCRawEnergy,"eleSCRawEnergy[eleCount]/F");
+  m_tree->Branch("eleSCecalIso",&eleSCecalIso,"eleSCecalIso[eleCount]/F");
   
   m_tree->Branch("scCount",&scCount,"scCount/I");
   m_tree->Branch("scEta",&scEta,"scEta[scCount]/F");
@@ -380,6 +397,9 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("scEtaWidth",&scEta,"scEtaWidth[scCount]/F");
   m_tree->Branch("scPhiWidth",&scPhi,"scPhiWidth[scCount]/F");
   m_tree->Branch("scClusterSize",&scClusterSize,"scClusterSize[scCount]/F");
+  m_tree->Branch("scHoE",&scHoE,"scHoE[scCount]/F");
+  m_tree->Branch("scSigmaIEIE",&scSigmaIEIE,"scSigmaIEIE[scCount]/F");
+  m_tree->Branch("scEcalIso",&scEcalIso,"scEcalIso[scCount]/F");
 
   m_tree->Branch("genJetCount",&genJetCount,"genJetCount/I");
   m_tree->Branch("genJetEta",&genJetEta,"genJetEta[genJetCount]/F");
@@ -532,6 +552,115 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     cout << "gen event info filled" << endl;
 
   
+  //////////// SuperClusters
+  //////////////////////////////////////////////////////////////////////
+
+  edm::Handle<SuperClusterCollection> superClustersEBHandle;
+  iEvent.getByLabel(scEBLabel_, superClustersEBHandle); 
+  const reco::SuperClusterCollection* superClustersEB = superClustersEBHandle.product();
+  edm::Handle<SuperClusterCollection> superClustersEEHandle;
+  iEvent.getByLabel(scEELabel_, superClustersEEHandle); 
+  const reco::SuperClusterCollection* superClustersEE = superClustersEEHandle.product();
+
+  edm::ESHandle<CaloGeometry> pG;
+  iSetup.get<CaloGeometryRecord>().get(pG);
+  const CaloGeometry* caloGeom = pG.product();
+
+  edm::Handle<EcalRecHitCollection> ecalBarrelRecHitHandle;
+  iEvent.getByLabel(ecalEBLabel_, ecalBarrelRecHitHandle);
+  edm::Handle<EcalRecHitCollection> ecalEndcapRecHitHandle;
+  iEvent.getByLabel(ecalEELabel_, ecalEndcapRecHitHandle);
+  edm::Handle<SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> > > hbheRecHitsHandle;
+  iEvent.getByLabel("hbhereco",hbheRecHitsHandle);
+  const SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> >* hbheRecHits = hbheRecHitsHandle.failedToGet () ? 0 : &*hbheRecHitsHandle;
+
+  scCount = 0;
+  EcalClusterLazyTools EcalTool(iEvent,iSetup,ecalEBLabel_,ecalEELabel_);
+  double ConeOutRadius = 0.4;  // these are all needed to make an instance of EgammaRecHitIsolation
+  double ConeInRadius = 3.0; // note that this is in number-of-crystal units
+  double etaWidth = 1.5;  // note that this is in number-of-crystal units
+  double PtMin = 0.0;
+  double EMin = 0.08;
+  EcalRecHitMetaCollection ecalBarrelHits(*ecalBarrelRecHitHandle);// these are all needed to make an instance of EgammaRecHitIsolation
+  EgammaRecHitIsolation ecalBarrelIsol(ConeOutRadius,ConeInRadius,etaWidth,PtMin,EMin,edm::ESHandle<CaloGeometry>(caloGeom),&ecalBarrelHits,DetId::Ecal);
+  ecalBarrelIsol.setUseNumCrystals(true);
+  double EndcapPtMin = 0.1;
+  double EndcapEMin = 0.0;
+  EcalRecHitMetaCollection ecalEndcapHits(*ecalEndcapRecHitHandle);
+  EgammaRecHitIsolation ecalEndcapIsol(ConeOutRadius,ConeInRadius,etaWidth,EndcapPtMin,EndcapEMin,edm::ESHandle<CaloGeometry>(caloGeom),&ecalEndcapHits,DetId::Ecal);
+  ecalEndcapIsol.setUseNumCrystals(true);
+
+  ////// SC for barrel and endcap are in different collections
+  ////// "hybrid" = barrel, "multi5x5" = endcap.  
+  ////// Loop over both collections, but don't reset scCount in between
+
+  for( SuperClusterCollection::const_iterator sc = superClustersEBHandle->begin(); sc != superClustersEBHandle->end();++sc ) 
+    {
+      if (scCount > maxEBsuperclusters_) break;
+      
+      scEta[scCount]=sc->eta();
+      scPhi[scCount]=sc->phi();
+      scRawEnergy[scCount]=sc->rawEnergy();
+      scEtaWidth[scCount]=sc->etaWidth();
+      scPhiWidth[scCount]=sc->phiWidth();
+      scClusterSize[scCount]=sc->clustersSize();
+
+      reco::SuperCluster tmp=*sc;
+      reco::SuperCluster* pnt_sc = &tmp;
+      if (hbheRecHits) {//is this a RECO file, so the rechit info is available to calculate HoE?
+	HoECalculator calc_HoE;
+	double schoe = calc_HoE(pnt_sc,iEvent,iSetup);
+	scHoE[scCount]=schoe;
+      }
+      vector<float> scLocalCov = EcalTool.scLocalCovariances(tmp);
+      double scSigmaiEiE= sqrt(scLocalCov[0]); //same method used in GsfElectronAlgo.cc
+      scSigmaIEIE[scCount]=scSigmaiEiE;
+
+      reco::SuperClusterRef tempSCRef(superClustersEB,scCount);  //get SCRef to use to make ele candidate
+      reco::RecoEcalCandidate ecalCand;  //make ele candidate to use Iso algorithm
+      ecalCand.setSuperCluster(tempSCRef);
+      double scecaliso = ecalBarrelIsol.getEtSum(&ecalCand);
+      scEcalIso[scCount]=scecaliso;
+
+      //cout << "SuperCluster: " << sc->eta() << "\t" << sc->phi() <<  "\t" << sc->rawEnergy()<<  "\t" <<  scecaliso << endl;
+      
+      scCount++;
+
+    }
+
+
+  for( SuperClusterCollection::const_iterator sc = superClustersEEHandle->begin(); sc != superClustersEEHandle->end();++sc ) 
+    {
+      if (scCount > maxEEsuperclusters_) break;
+      
+      scEta[scCount]=sc->eta();
+      scPhi[scCount]=sc->phi();
+      scRawEnergy[scCount]=sc->rawEnergy();
+      scEtaWidth[scCount]=sc->etaWidth();
+      scPhiWidth[scCount]=sc->phiWidth();
+      scClusterSize[scCount]=sc->clustersSize();
+
+      reco::SuperCluster tmp=*sc;
+      reco::SuperCluster* pnt_sc = &tmp;
+      if (hbheRecHits) {
+	HoECalculator calc_HoE;
+	double schoe = calc_HoE(pnt_sc,iEvent,iSetup);
+	scHoE[scCount]=schoe;
+      }
+      vector<float> scLocalCov = EcalTool.scLocalCovariances(tmp);
+      double scSigmaiEiE= sqrt(scLocalCov[0]); //same method used in GsfElectronAlgo.cc
+      scSigmaIEIE[scCount]=scSigmaiEiE;
+
+      reco::SuperClusterRef tempSCRef(superClustersEE,scCount);  //get SCRef to use to make ele candidate
+      reco::RecoEcalCandidate ecalCand;  //make ele candidate to use Iso algorithm
+      ecalCand.setSuperCluster(tempSCRef);
+      double scecaliso = ecalEndcapIsol.getEtSum(&ecalCand);
+      scEcalIso[scCount]=scecaliso;
+      
+      scCount++;
+
+    }
+
   /////////// Electrons
   ///////////////////////////////////////////////////////////////////////////////////////
   edm::Handle<std::vector<pat::Electron> > electrons;
@@ -612,31 +741,27 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       elePassIso[eleCount]=passIso;
       eleOverlaps[eleCount]=overlaps;
 
+      ///////// SC associated with electron
+      reco::SuperClusterRef eleSCRef = electron->superCluster();  //get SCRef to use to make ele candidate
+      eleSCEta[eleCount]=eleSCRef->eta();
+      eleSCPhi[eleCount]=eleSCRef->phi();
+      eleSCRawEnergy[eleCount]=eleSCRef->rawEnergy();
+      reco::RecoEcalCandidate ecalCand;  //make ele candidate to use Iso algorithm
+      ecalCand.setSuperCluster(eleSCRef);
+      if (fabs(eleSCRef->eta())<1.48) eleSCecalIso[eleCount] = ecalBarrelIsol.getEtSum(&ecalCand);
+      else eleSCecalIso[eleCount] = ecalEndcapIsol.getEtSum(&ecalCand);
+
+      double eleIso;
+      if (fabs(eleSCRef->eta())<1.48) eleIso = ecalBarrelIsol.getEtSum(&(*electron));
+      else eleIso = ecalEndcapIsol.getEtSum(&(*electron));
+
+      //cout << "Stored: " << ecalIso << "\t" << "Calculated: " << eleIso << " " << "\t" << "Diff: " << ecalIso - eleIso << " " << "\t" << "Eta: " << electron->eta() << endl;
+      
+
       //go to next electron
       eleCount++;
  
     }
-
-  //////////// SuperClusters
-  //////////////////////////////////////////////////////////////////////
-  edm::Handle<SuperClusterCollection> superClusters;
-  iEvent.getByLabel(scLabel_, superClusters); 
-
-  scCount = 0;
-  for( SuperClusterCollection::const_iterator sc = superClusters->begin(); sc != superClusters->end();++sc ) 
-    {
-      if (scCount > maxsuperclusters_) break;
-      
-      scEta[scCount]=sc->eta();
-      scPhi[scCount]=sc->phi();
-      scRawEnergy[scCount]=sc->rawEnergy();
-      scEtaWidth[scCount]=sc->etaWidth();
-      scPhiWidth[scCount]=sc->phiWidth();
-      scClusterSize[scCount]=sc->clustersSize();
-
-      scCount++;
-    }
-
 
   //////////// Gen Particles
   //////////////////////////////////////////////////////////////////////////////////////////////

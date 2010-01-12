@@ -10,13 +10,14 @@ process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
 process.MessageLogger.cerr.default.limit = 100
 #################################################################
-process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
+process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(False) )
 
 # source
 process.source = cms.Source("PoolSource", 
-     fileNames = cms.untracked.vstring('file:input_file.root')
+     fileNames = cms.untracked.vstring('file:/data/groups/LQ/FullSim/Fall09/QCD_EMEnriched/QCD_EMEnriched_Pt30to80_Summer09-MC_31X_V3_7TeV-v1_GEN-SIM-RECO.root')
+#     fileNames = cms.untracked.vstring('file:/data/groups/LQ/FullSim/Fall09/TTbar/TTbar_MC_31X_V3-v1_GEN_SIM_RECO.root')
 )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 process.TFileService = cms.Service("TFileService",
     fileName = cms.string('RootTupleMakerPAT_output.root')
@@ -60,10 +61,11 @@ process.LJFilterPAT = process.LJFilter.clone()
 # Primary skim 
 process.LJFilter.muLabel = 'muons'
 process.LJFilter.elecLabel = 'gsfElectrons'
-process.LJFilter.jetLabel = 'iterativeCone5CaloJets'
+process.LJFilter.jetLabel = 'antiKt5CaloJets'
 process.LJFilter.counteitherleptontype = False
 process.LJFilter.muonsMin = -1
-process.LJFilter.elecPT = 30.
+process.LJFilter.electronsMin = -1
+process.LJFilter.jetsMin = 1
 # Secondary skim
 process.LJFilterPAT.counteitherleptontype = False
 process.LJFilterPAT.muonsMin = -1
@@ -77,6 +79,8 @@ process.treeCreator.maxgenjets      = cms.untracked.int32(10)
 process.treeCreator.maxelectrons    = cms.untracked.int32(10)
 process.treeCreator.maxcalojets     = cms.untracked.int32(10)
 process.treeCreator.maxmuons        = cms.untracked.int32(10)
+process.treeCreator.maxEBsuperclusters= cms.untracked.int32(20)
+process.treeCreator.maxEEsuperclusters= cms.untracked.int32(10)
 process.treeCreator.debug           = cms.untracked.bool(False)
 # overall luminosity normalization  (in pb-1)   
 process.treeCreator.luminosity      = cms.untracked.double(100)
@@ -89,6 +93,10 @@ process.treeCreator.muonLabel       = cms.untracked.InputTag("cleanLayer1Muons")
 process.treeCreator.electronLabel   = cms.untracked.InputTag("cleanLayer1Electrons");
 process.treeCreator.caloJetLabel    = cms.untracked.InputTag("cleanLayer1Jets");
 process.treeCreator.genJetLabel     = cms.untracked.InputTag("iterativeCone5GenJets");
+process.treeCreator.ecalEBLabel     = cms.untracked.InputTag("reducedEcalRecHitsEB");
+process.treeCreator.ecalEELabel     = cms.untracked.InputTag("reducedEcalRecHitsEE");
+process.treeCreator.superClusterEELabel=cms.untracked.InputTag("multi5x5SuperClustersWithPreshower");
+process.treeCreator.superClusterEBLabel=cms.untracked.InputTag("hybridSuperClusters");
 process.treeCreator.electronPt      = cms.untracked.double(30.);
 process.treeCreator.electronIso     = cms.untracked.double(0.1);
 process.treeCreator.muonPt          = cms.untracked.double(20.);
