@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.9 2009/11/13 13:05:15 ferencek Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.10 2010/01/12 16:11:23 lockner Exp $
 //
 //
 
@@ -631,7 +631,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   for( SuperClusterCollection::const_iterator sc = superClustersEEHandle->begin(); sc != superClustersEEHandle->end();++sc ) 
     {
-      if (scCount > maxEEsuperclusters_) break;
+      if (scCount > maxEEsuperclusters_ + maxEBsuperclusters_ ) break;
       
       scEta[scCount]=sc->eta();
       scPhi[scCount]=sc->phi();
