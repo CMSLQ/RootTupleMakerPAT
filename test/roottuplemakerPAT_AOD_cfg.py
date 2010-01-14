@@ -28,6 +28,23 @@ process.TFileService = cms.Service("TFileService",
 # load the standard PAT config
 process.load("PhysicsTools.PatAlgos.patSequences_cff")
 
+# HEEPify the PAT electrons
+from SHarper.HEEPAnalyzer.HEEPSelectionCuts_cfi import *
+process.heepPatElectrons = cms.EDProducer("HEEPAttStatusToPAT",
+    eleLabel = cms.InputTag("allLayer1Electrons"),
+    barrelCuts = cms.PSet(heepBarrelCuts),
+    endcapCuts = cms.PSet(heepEndcapCuts)
+)
+
+# Add 'heepPatElectrons' in the right place and point 'selectedLayer1Electrons' to them
+process.patDefaultSequence.replace( process.allLayer1Electrons, process.allLayer1Electrons*process.heepPatElectrons )
+process.selectedLayer1Electrons.src = cms.InputTag("heepPatElectrons")
+
+# Electron and jet cleaning deltaR parameters
+process.cleanLayer1Electrons.checkOverlaps.muons.deltaR = 0.3
+process.cleanLayer1Jets.checkOverlaps.muons.deltaR = 0.5
+process.cleanLayer1Jets.checkOverlaps.electrons.deltaR = 0.5
+
 ## Load additional RECO config
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
