@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.10 2010/01/12 16:11:23 lockner Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.11 2010/01/12 16:31:28 lockner Exp $
 //
 //
 
@@ -144,7 +144,8 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              eleSCEta[MAXELECTRONS];
       Float_t              eleSCPhi[MAXELECTRONS];
       Float_t              eleSCRawEnergy[MAXELECTRONS];
-      Float_t              eleSCecalIso[MAXELECTRONS];
+      Float_t              eleSCEcalIso[MAXELECTRONS];
+      Float_t              eleSCHEEPEcalIso[MAXELECTRONS];
   
 
       // SuperClusters
@@ -158,6 +159,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              scHoE[MAXSC];
       Float_t              scSigmaIEIE[MAXSC];
       Float_t              scEcalIso[MAXSC];
+      Float_t              scHEEPEcalIso[MAXSC];
 
       // GenJets
       Int_t                genJetCount;
@@ -388,7 +390,8 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("eleSCEta",&eleSCEta,"eleSCEta[eleCount]/F");
   m_tree->Branch("eleSCPhi",&eleSCPhi,"eleSCPhi[eleCount]/F");
   m_tree->Branch("eleSCRawEnergy",&eleSCRawEnergy,"eleSCRawEnergy[eleCount]/F");
-  m_tree->Branch("eleSCecalIso",&eleSCecalIso,"eleSCecalIso[eleCount]/F");
+  m_tree->Branch("eleSCEcalIso",&eleSCEcalIso,"eleSCEcalIso[eleCount]/F");
+  m_tree->Branch("eleSCHEEPEcalIso",&eleSCHEEPEcalIso,"eleSCHEEPEcalIso[eleCount]/F");
   
   m_tree->Branch("scCount",&scCount,"scCount/I");
   m_tree->Branch("scEta",&scEta,"scEta[scCount]/F");
@@ -400,6 +403,7 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("scHoE",&scHoE,"scHoE[scCount]/F");
   m_tree->Branch("scSigmaIEIE",&scSigmaIEIE,"scSigmaIEIE[scCount]/F");
   m_tree->Branch("scEcalIso",&scEcalIso,"scEcalIso[scCount]/F");
+  m_tree->Branch("scHEEPEcalIso",&scHEEPEcalIso,"scHEEPEcalIso[scCount]/F");
 
   m_tree->Branch("genJetCount",&genJetCount,"genJetCount/I");
   m_tree->Branch("genJetEta",&genJetEta,"genJetEta[genJetCount]/F");
@@ -576,19 +580,32 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   scCount = 0;
   EcalClusterLazyTools EcalTool(iEvent,iSetup,ecalEBLabel_,ecalEELabel_);
+//   double ConeOutRadius = 0.4;  // these are all needed to make an instance of EgammaRecHitIsolation
+//   double ConeInRadius = 3.0; // note that this is in number-of-crystal units
+//   double etaWidth = 1.5;  // note that this is in number-of-crystal units
+//   double PtMin = 0.0;
+//   double EMin = 0.08;
+//   double EndcapPtMin = 0.0;
+//   double EndcapEMin = 0.1;
   double ConeOutRadius = 0.4;  // these are all needed to make an instance of EgammaRecHitIsolation
-  double ConeInRadius = 3.0; // note that this is in number-of-crystal units
-  double etaWidth = 1.5;  // note that this is in number-of-crystal units
+  double ConeInRadius = 0.045; 
+  double etaWidth = 0.02; 
   double PtMin = 0.0;
   double EMin = 0.08;
+  double EndcapConeInRadius = 0.07; // note that this is in number-of-crystal units
+  double EndcapPtMin = 0.0;
+  double EndcapEMin = 0.1;
+  double HeepConeOutRadius = 0.3;  // HEEP uses different iso values than Egamma/PAT default
+  double HeepConeInRadius = 3.0; //note that this is in num of crystals
+  double HeepEtaWidth = 1.5;  //note that this is in num of crystals
   EcalRecHitMetaCollection ecalBarrelHits(*ecalBarrelRecHitHandle);// these are all needed to make an instance of EgammaRecHitIsolation
   EgammaRecHitIsolation ecalBarrelIsol(ConeOutRadius,ConeInRadius,etaWidth,PtMin,EMin,edm::ESHandle<CaloGeometry>(caloGeom),&ecalBarrelHits,DetId::Ecal);
-  ecalBarrelIsol.setUseNumCrystals(true);
-  double EndcapPtMin = 0.1;
-  double EndcapEMin = 0.0;
+  EgammaRecHitIsolation HeepEcalBarrelIsol(HeepConeOutRadius,HeepConeInRadius,HeepEtaWidth,PtMin,EMin,edm::ESHandle<CaloGeometry>(caloGeom),&ecalBarrelHits,DetId::Ecal);
+  HeepEcalBarrelIsol.setUseNumCrystals(true);
   EcalRecHitMetaCollection ecalEndcapHits(*ecalEndcapRecHitHandle);
-  EgammaRecHitIsolation ecalEndcapIsol(ConeOutRadius,ConeInRadius,etaWidth,EndcapPtMin,EndcapEMin,edm::ESHandle<CaloGeometry>(caloGeom),&ecalEndcapHits,DetId::Ecal);
-  ecalEndcapIsol.setUseNumCrystals(true);
+  EgammaRecHitIsolation ecalEndcapIsol(ConeOutRadius,EndcapConeInRadius,etaWidth,EndcapPtMin,EndcapEMin,edm::ESHandle<CaloGeometry>(caloGeom),&ecalEndcapHits,DetId::Ecal);
+  EgammaRecHitIsolation HeepEcalEndcapIsol(HeepConeOutRadius,HeepConeInRadius,HeepEtaWidth,EndcapPtMin,EndcapEMin,edm::ESHandle<CaloGeometry>(caloGeom),&ecalEndcapHits,DetId::Ecal);
+  HeepEcalEndcapIsol.setUseNumCrystals(true);
 
   ////// SC for barrel and endcap are in different collections
   ////// "hybrid" = barrel, "multi5x5" = endcap.  
@@ -621,6 +638,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       ecalCand.setSuperCluster(tempSCRef);
       double scecaliso = ecalBarrelIsol.getEtSum(&ecalCand);
       scEcalIso[scCount]=scecaliso;
+      scHEEPEcalIso[scCount]=HeepEcalBarrelIsol.getEtSum(&ecalCand);
 
       //cout << "SuperCluster: " << sc->eta() << "\t" << sc->phi() <<  "\t" << sc->rawEnergy()<<  "\t" <<  scecaliso << endl;
       
@@ -656,6 +674,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       ecalCand.setSuperCluster(tempSCRef);
       double scecaliso = ecalEndcapIsol.getEtSum(&ecalCand);
       scEcalIso[scCount]=scecaliso;
+      scHEEPEcalIso[scCount]= HeepEcalEndcapIsol.getEtSum(&ecalCand);
       
       scCount++;
 
@@ -748,15 +767,10 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       eleSCRawEnergy[eleCount]=eleSCRef->rawEnergy();
       reco::RecoEcalCandidate ecalCand;  //make ele candidate to use Iso algorithm
       ecalCand.setSuperCluster(eleSCRef);
-      if (fabs(eleSCRef->eta())<1.48) eleSCecalIso[eleCount] = ecalBarrelIsol.getEtSum(&ecalCand);
-      else eleSCecalIso[eleCount] = ecalEndcapIsol.getEtSum(&ecalCand);
-
-      double eleIso;
-      if (fabs(eleSCRef->eta())<1.48) eleIso = ecalBarrelIsol.getEtSum(&(*electron));
-      else eleIso = ecalEndcapIsol.getEtSum(&(*electron));
-
-      //cout << "Stored: " << ecalIso << "\t" << "Calculated: " << eleIso << " " << "\t" << "Diff: " << ecalIso - eleIso << " " << "\t" << "Eta: " << electron->eta() << endl;
-      
+      if (fabs(eleSCRef->eta())<1.48) eleSCEcalIso[eleCount] = ecalBarrelIsol.getEtSum(&ecalCand);
+      else eleSCEcalIso[eleCount] = ecalEndcapIsol.getEtSum(&ecalCand);
+      if (fabs(eleSCRef->eta())<1.48) eleSCHEEPEcalIso[eleCount] = HeepEcalBarrelIsol.getEtSum(&ecalCand);
+      else eleSCHEEPEcalIso[eleCount] = HeepEcalEndcapIsol.getEtSum(&ecalCand);
 
       //go to next electron
       eleCount++;
