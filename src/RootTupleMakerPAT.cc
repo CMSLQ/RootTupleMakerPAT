@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.11 2010/01/12 16:31:28 lockner Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.12 2010/01/14 19:49:01 lockner Exp $
 //
 //
 
@@ -144,6 +144,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              eleSCEta[MAXELECTRONS];
       Float_t              eleSCPhi[MAXELECTRONS];
       Float_t              eleSCRawEnergy[MAXELECTRONS];
+      Float_t              eleSCPt[MAXELECTRONS];
       Float_t              eleSCEcalIso[MAXELECTRONS];
       Float_t              eleSCHEEPEcalIso[MAXELECTRONS];
   
@@ -153,6 +154,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              scEta[MAXSC];
       Float_t              scPhi[MAXSC];
       Float_t              scRawEnergy[MAXSC];
+      Float_t              scPt[MAXSC];
       Float_t              scEtaWidth[MAXSC];
       Float_t              scPhiWidth[MAXSC];
       Float_t              scClusterSize[MAXSC];
@@ -390,6 +392,7 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("eleSCEta",&eleSCEta,"eleSCEta[eleCount]/F");
   m_tree->Branch("eleSCPhi",&eleSCPhi,"eleSCPhi[eleCount]/F");
   m_tree->Branch("eleSCRawEnergy",&eleSCRawEnergy,"eleSCRawEnergy[eleCount]/F");
+  m_tree->Branch("eleSCPt",&eleSCPt,"eleSCPt[eleCount]/F");
   m_tree->Branch("eleSCEcalIso",&eleSCEcalIso,"eleSCEcalIso[eleCount]/F");
   m_tree->Branch("eleSCHEEPEcalIso",&eleSCHEEPEcalIso,"eleSCHEEPEcalIso[eleCount]/F");
   
@@ -397,6 +400,7 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("scEta",&scEta,"scEta[scCount]/F");
   m_tree->Branch("scPhi",&scPhi,"scPhi[scCount]/F");
   m_tree->Branch("scRawEnergy",&scRawEnergy,"scRawEnergy[scCount]/F");
+  m_tree->Branch("scPt",&scPt,"scPt[scCount]/F");
   m_tree->Branch("scEtaWidth",&scEta,"scEtaWidth[scCount]/F");
   m_tree->Branch("scPhiWidth",&scPhi,"scPhiWidth[scCount]/F");
   m_tree->Branch("scClusterSize",&scClusterSize,"scClusterSize[scCount]/F");
@@ -618,6 +622,9 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       scEta[scCount]=sc->eta();
       scPhi[scCount]=sc->phi();
       scRawEnergy[scCount]=sc->rawEnergy();
+      TVector3 sc_vec;
+      sc_vec.SetXYZ(sc->x(),sc->y(),sc->z());
+      scPt[scCount]=sc->energy()*(sc_vec.Perp()/sc_vec.Mag());
       scEtaWidth[scCount]=sc->etaWidth();
       scPhiWidth[scCount]=sc->phiWidth();
       scClusterSize[scCount]=sc->clustersSize();
@@ -654,6 +661,9 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       scEta[scCount]=sc->eta();
       scPhi[scCount]=sc->phi();
       scRawEnergy[scCount]=sc->rawEnergy();
+      TVector3 sc_vec;
+      sc_vec.SetXYZ(sc->x(),sc->y(),sc->z());
+      scPt[scCount]=sc->energy()*(sc_vec.Perp()/sc_vec.Mag());
       scEtaWidth[scCount]=sc->etaWidth();
       scPhiWidth[scCount]=sc->phiWidth();
       scClusterSize[scCount]=sc->clustersSize();
@@ -765,6 +775,9 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       eleSCEta[eleCount]=eleSCRef->eta();
       eleSCPhi[eleCount]=eleSCRef->phi();
       eleSCRawEnergy[eleCount]=eleSCRef->rawEnergy();
+      TVector3 sc_vec;
+      sc_vec.SetXYZ(eleSCRef->x(),eleSCRef->y(),eleSCRef->z());
+      eleSCPt[eleCount]=eleSCRef->energy()*(sc_vec.Perp()/sc_vec.Mag());
       reco::RecoEcalCandidate ecalCand;  //make ele candidate to use Iso algorithm
       ecalCand.setSuperCluster(eleSCRef);
       if (fabs(eleSCRef->eta())<1.48) eleSCEcalIso[eleCount] = ecalBarrelIsol.getEtSum(&ecalCand);
