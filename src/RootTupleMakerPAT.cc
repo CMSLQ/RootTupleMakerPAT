@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.12 2010/01/14 19:49:01 lockner Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.13 2010/01/15 19:47:15 lockner Exp $
 //
 //
 
@@ -72,7 +72,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       bool                 usePDFweight_;
       bool                 doBeamSpotCorr_;
       std::string          PDFset_;
-      edm::InputTag        muonLabel_, electronLabel_, caloJetLabel_, genJetLabel_, scEBLabel_, scEELabel_, ecalEELabel_, ecalEBLabel_;
+  edm::InputTag        muonLabel_, electronLabel_, caloJetLabel_, genJetLabel_, scEBLabel_, scEELabel_, ecalEELabel_, ecalEBLabel_, trkLabel_;
       double               electronPt_, electronIso_, muonPt_, muonIso_;
 
       //Output RootNtuple
@@ -147,6 +147,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              eleSCPt[MAXELECTRONS];
       Float_t              eleSCEcalIso[MAXELECTRONS];
       Float_t              eleSCHEEPEcalIso[MAXELECTRONS];
+      Float_t              eleSCHEEPTrkIso[MAXELECTRONS];
   
 
       // SuperClusters
@@ -162,6 +163,16 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              scSigmaIEIE[MAXSC];
       Float_t              scEcalIso[MAXSC];
       Float_t              scHEEPEcalIso[MAXSC];
+      Float_t              scHEEPTrkIso[MAXSC];
+      Int_t                scTrackMatch[MAXSC];
+      Float_t              scDrTrack1[MAXSC];
+      Float_t              scTrack1Eta[MAXSC];
+      Float_t              scTrack1Phi[MAXSC];
+      Float_t              scTrack1Pt[MAXSC];
+      Float_t              scDrTrack2[MAXSC];
+      Float_t              scTrack2Eta[MAXSC];
+      Float_t              scTrack2Phi[MAXSC];
+      Float_t              scTrack2Pt[MAXSC];
 
       // GenJets
       Int_t                genJetCount;
@@ -243,6 +254,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
 RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
 
 {
+
   //get parameters from cfg file
   maxgenparticles_   = iConfig.getUntrackedParameter<int>("maxgenparticles",100); 
   maxgenjets_        = iConfig.getUntrackedParameter<int>("maxgenjets",10); 
@@ -273,6 +285,7 @@ RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
   genJetLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("genJetLabel",edm::InputTag("sisCone5GenJets"));
   ecalEELabel_   = iConfig.getUntrackedParameter<edm::InputTag>("ecalEELabel",edm::InputTag("reducedEcalRecHitsEE")); 
   ecalEBLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("ecalEBLabel",edm::InputTag("reducedEcalRecHitsEB")); 
+  trkLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("trkLabel",edm::InputTag("generalTracks")); 
   
   electronPt_    = iConfig.getUntrackedParameter<double>("electronPt",30.);
   electronIso_   = iConfig.getUntrackedParameter<double>("electronIso",0.1);
@@ -395,6 +408,7 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("eleSCPt",&eleSCPt,"eleSCPt[eleCount]/F");
   m_tree->Branch("eleSCEcalIso",&eleSCEcalIso,"eleSCEcalIso[eleCount]/F");
   m_tree->Branch("eleSCHEEPEcalIso",&eleSCHEEPEcalIso,"eleSCHEEPEcalIso[eleCount]/F");
+  m_tree->Branch("eleSCHEEPTrkIso",&eleSCHEEPTrkIso,"eleSCHEEPTrkIso[eleCount]/F");
   
   m_tree->Branch("scCount",&scCount,"scCount/I");
   m_tree->Branch("scEta",&scEta,"scEta[scCount]/F");
@@ -408,6 +422,16 @@ RootTupleMakerPAT::beginJob(const edm::EventSetup&)
   m_tree->Branch("scSigmaIEIE",&scSigmaIEIE,"scSigmaIEIE[scCount]/F");
   m_tree->Branch("scEcalIso",&scEcalIso,"scEcalIso[scCount]/F");
   m_tree->Branch("scHEEPEcalIso",&scHEEPEcalIso,"scHEEPEcalIso[scCount]/F");
+  m_tree->Branch("scHEEPTrkIso",&scHEEPTrkIso,"scHEEPTrkIso[scCount]/F");
+  m_tree->Branch("scTrackMatch",&scTrackMatch,"scTrackMatch[scCount]/I");
+  m_tree->Branch("scDrTrack1",&scDrTrack1,"scDrTrack1[scCount]/F");
+  m_tree->Branch("scTrack1Eta",&scTrack1Eta,"scTrack1Eta[scCount]/F");
+  m_tree->Branch("scTrack1Phi",&scTrack1Phi,"scTrack1Phi[scCount]/F");
+  m_tree->Branch("scTrack1Pt",&scTrack1Pt,"scTrack1Pt[scCount]/F");
+  m_tree->Branch("scDrTrack2",&scDrTrack2,"scDrTrack2[scCount]/F");
+  m_tree->Branch("scTrack2Eta",&scTrack2Eta,"scTrack2Eta[scCount]/F");
+  m_tree->Branch("scTrack2Phi",&scTrack2Phi,"scTrack2Phi[scCount]/F");
+  m_tree->Branch("scTrack2Pt",&scTrack2Pt,"scTrack2Pt[scCount]/F");
 
   m_tree->Branch("genJetCount",&genJetCount,"genJetCount/I");
   m_tree->Branch("genJetEta",&genJetEta,"genJetEta[genJetCount]/F");
@@ -581,16 +605,17 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   edm::Handle<SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> > > hbheRecHitsHandle;
   iEvent.getByLabel("hbhereco",hbheRecHitsHandle);
   const SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> >* hbheRecHits = hbheRecHitsHandle.failedToGet () ? 0 : &*hbheRecHitsHandle;
+  EcalClusterLazyTools EcalTool(iEvent,iSetup,ecalEBLabel_,ecalEELabel_);
+
+  edm::Handle<TrackCollection> trackHandle;
+  iEvent.getByLabel(trkLabel_, trackHandle);
+  const TrackCollection* tracks = trackHandle.product();
+  edm::Handle<BeamSpot> BeamSpotHandle;
+  iEvent.getByLabel("offlineBeamSpot",BeamSpotHandle);
+  reco::BeamSpot spot = *BeamSpotHandle;
+  PhotonTkIsolation TrackTool(0.3,0.04,0.7,0.2,9999,tracks,math::XYZPoint(spot.x0(),spot.y0(),spot.z0()));
 
   scCount = 0;
-  EcalClusterLazyTools EcalTool(iEvent,iSetup,ecalEBLabel_,ecalEELabel_);
-//   double ConeOutRadius = 0.4;  // these are all needed to make an instance of EgammaRecHitIsolation
-//   double ConeInRadius = 3.0; // note that this is in number-of-crystal units
-//   double etaWidth = 1.5;  // note that this is in number-of-crystal units
-//   double PtMin = 0.0;
-//   double EMin = 0.08;
-//   double EndcapPtMin = 0.0;
-//   double EndcapEMin = 0.1;
   double ConeOutRadius = 0.4;  // these are all needed to make an instance of EgammaRecHitIsolation
   double ConeInRadius = 0.045; 
   double etaWidth = 0.02; 
@@ -624,7 +649,8 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       scRawEnergy[scCount]=sc->rawEnergy();
       TVector3 sc_vec;
       sc_vec.SetXYZ(sc->x(),sc->y(),sc->z());
-      scPt[scCount]=sc->energy()*(sc_vec.Perp()/sc_vec.Mag());
+      float scpt = sc->energy()*(sc_vec.Perp()/sc_vec.Mag());
+      scPt[scCount]=scpt;
       scEtaWidth[scCount]=sc->etaWidth();
       scPhiWidth[scCount]=sc->phiWidth();
       scClusterSize[scCount]=sc->clustersSize();
@@ -643,16 +669,49 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       reco::SuperClusterRef tempSCRef(superClustersEB,scCount);  //get SCRef to use to make ele candidate
       reco::RecoEcalCandidate ecalCand;  //make ele candidate to use Iso algorithm
       ecalCand.setSuperCluster(tempSCRef);
-      double scecaliso = ecalBarrelIsol.getEtSum(&ecalCand);
-      scEcalIso[scCount]=scecaliso;
+      const Candidate::PolarLorentzVector photon_vec(scpt, sc->eta(), sc->phi(), 0.0);
+      ecalCand.setP4( photon_vec );
+      scEcalIso[scCount] = ecalBarrelIsol.getEtSum(&ecalCand);
+      scHEEPTrkIso[scCount] = TrackTool.getPtTracks(&ecalCand);
       scHEEPEcalIso[scCount]=HeepEcalBarrelIsol.getEtSum(&ecalCand);
 
-      //cout << "SuperCluster: " << sc->eta() << "\t" << sc->phi() <<  "\t" << sc->rawEnergy()<<  "\t" <<  scecaliso << endl;
-      
+      float closestTrkDr = 99;
+      reco::Track closestTrk;
+      float nextTrkDr = 99;
+      reco::Track nextTrk;
+
+      for ( TrackCollection::const_iterator trk = trackHandle->begin(); trk != trackHandle->end(); ++trk )
+	{
+	  TVector3 trk_vec;
+	  trk_vec.SetPtEtaPhi(trk->pt(),trk->eta(),trk->phi());
+	  float dR = trk_vec.DeltaR(sc_vec);
+	  if (dR<closestTrkDr) 
+	    {
+	      nextTrkDr = closestTrkDr;
+	      nextTrk = closestTrk;
+	      closestTrkDr = dR;
+	      closestTrk = *trk;
+	    }
+	  else if (dR<nextTrkDr) 
+	    {
+	      nextTrkDr = dR;
+	      nextTrk = *trk;
+	    }
+	}
+      if (closestTrkDr<0.04) scTrackMatch[scCount]=1;  // 1=true, 0=false
+      else scTrackMatch[scCount]=0;
+      scDrTrack1[scCount]=closestTrkDr;
+      scDrTrack2[scCount]=nextTrkDr;
+      scTrack1Eta[scCount]=closestTrk.eta();
+      scTrack2Eta[scCount]=nextTrk.eta();
+      scTrack1Phi[scCount]=closestTrk.phi();
+      scTrack2Phi[scCount]=nextTrk.phi();
+      scTrack1Pt[scCount]=closestTrk.pt();
+      scTrack2Pt[scCount]=nextTrk.pt();
+
       scCount++;
 
     }
-
 
   for( SuperClusterCollection::const_iterator sc = superClustersEEHandle->begin(); sc != superClustersEEHandle->end();++sc ) 
     {
@@ -682,10 +741,44 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       reco::SuperClusterRef tempSCRef(superClustersEE,scCount);  //get SCRef to use to make ele candidate
       reco::RecoEcalCandidate ecalCand;  //make ele candidate to use Iso algorithm
       ecalCand.setSuperCluster(tempSCRef);
-      double scecaliso = ecalEndcapIsol.getEtSum(&ecalCand);
-      scEcalIso[scCount]=scecaliso;
+      scEcalIso[scCount] = ecalEndcapIsol.getEtSum(&ecalCand);
       scHEEPEcalIso[scCount]= HeepEcalEndcapIsol.getEtSum(&ecalCand);
+      scHEEPTrkIso[scCount] = TrackTool.getPtTracks(&ecalCand);
       
+      float closestTrkDr = 99;
+      reco::Track closestTrk;
+      float nextTrkDr = 99;
+      reco::Track nextTrk;
+
+      for ( TrackCollection::const_iterator trk = trackHandle->begin(); trk != trackHandle->end(); ++trk )
+	{
+	  TVector3 trk_vec;
+	  trk_vec.SetPtEtaPhi(trk->pt(),trk->eta(),trk->phi());
+	  float dR = trk_vec.DeltaR(sc_vec);
+	  if (dR<closestTrkDr) 
+	    {
+	      nextTrkDr = closestTrkDr;
+	      nextTrk = closestTrk;
+	      closestTrkDr = dR;
+	      closestTrk = *trk;
+	    }
+	  else if (dR<nextTrkDr) 
+	    {
+	      nextTrkDr = dR;
+	      nextTrk = *trk;
+	    }
+	}
+      if (closestTrkDr<0.04) scTrackMatch[scCount]=1;  // 1=true, 0=false
+      else scTrackMatch[scCount]=0;
+      scDrTrack1[scCount]=closestTrkDr;
+      scDrTrack2[scCount]=nextTrkDr;
+      scTrack1Eta[scCount]=closestTrk.eta();
+      scTrack2Eta[scCount]=nextTrk.eta();
+      scTrack1Phi[scCount]=closestTrk.phi();
+      scTrack2Phi[scCount]=nextTrk.phi();
+      scTrack1Pt[scCount]=closestTrk.pt();
+      scTrack2Pt[scCount]=nextTrk.pt();
+
       scCount++;
 
     }
@@ -699,6 +792,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   eleCount = 0;
   for( std::vector<pat::Electron>::const_iterator electron = electrons->begin(); electron != electrons->end();++electron ) 
     {
+      //cout << electron->pt()<< endl;
       //if electron is not ECAL driven, continue
       if(!electron->isEcalDriven())
         continue;
@@ -777,13 +871,17 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       eleSCRawEnergy[eleCount]=eleSCRef->rawEnergy();
       TVector3 sc_vec;
       sc_vec.SetXYZ(eleSCRef->x(),eleSCRef->y(),eleSCRef->z());
-      eleSCPt[eleCount]=eleSCRef->energy()*(sc_vec.Perp()/sc_vec.Mag());
+      double eleSCRefpt = eleSCRef->energy()*(sc_vec.Perp()/sc_vec.Mag());
+      eleSCPt[eleCount]=eleSCRefpt ;
       reco::RecoEcalCandidate ecalCand;  //make ele candidate to use Iso algorithm
       ecalCand.setSuperCluster(eleSCRef);
+      const Candidate::PolarLorentzVector photon_vec(eleSCRefpt, eleSCRef->eta(), eleSCRef->phi(), 0.0);
+      ecalCand.setP4( photon_vec );
       if (fabs(eleSCRef->eta())<1.48) eleSCEcalIso[eleCount] = ecalBarrelIsol.getEtSum(&ecalCand);
       else eleSCEcalIso[eleCount] = ecalEndcapIsol.getEtSum(&ecalCand);
       if (fabs(eleSCRef->eta())<1.48) eleSCHEEPEcalIso[eleCount] = HeepEcalBarrelIsol.getEtSum(&ecalCand);
       else eleSCHEEPEcalIso[eleCount] = HeepEcalEndcapIsol.getEtSum(&ecalCand);
+      eleSCHEEPTrkIso[eleCount] = TrackTool.getPtTracks(&ecalCand);
 
       //go to next electron
       eleCount++;
