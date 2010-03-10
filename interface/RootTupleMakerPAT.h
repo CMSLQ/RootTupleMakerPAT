@@ -80,6 +80,7 @@ extern "C" {
 
 // Electron stuff
 #include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
+#include "DataFormats/EgammaCandidates/interface/Electron.h"
 #include "DataFormats/EgammaCandidates/interface/GsfElectronFwd.h"
 #include "DataFormats/PatCandidates/interface/Electron.h"
 #include "DataFormats/EgammaReco/interface/SuperCluster.h"
@@ -115,6 +116,11 @@ extern "C" {
 #include "RecoEcal/EgammaCoreTools/interface/EcalClusterLazyTools.h"
 #include "RecoEgamma/EgammaIsolationAlgos/interface/EgammaRecHitIsolation.h"
 #include "DataFormats/RecoCandidate/interface/RecoEcalCandidate.h"
+#include "RecoEgamma/EgammaIsolationAlgos/interface/PhotonTkIsolation.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/Candidate/interface/Candidate.h"
+#include "CommonTools/RecoAlgos/src/SuperClusterToCandidate.h"
 
 // PAT stuff
 #include "DataFormats/Common/interface/View.h"
