@@ -138,7 +138,7 @@ extern "C" {
 
 // NEW, possibly unnecessary
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "PhysicsTools/UtilAlgos/interface/TFileService.h"
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "FWCore/ParameterSet/interface/InputTag.h"
 
 // About tree

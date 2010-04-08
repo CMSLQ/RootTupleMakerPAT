@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.13 2010/01/15 19:47:15 lockner Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.14 2010/01/28 20:15:04 lockner Exp $
 //
 //
 
@@ -35,7 +35,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       ~RootTupleMakerPAT();
 
    private:
-      virtual void beginJob(const edm::EventSetup&) ;
+      virtual void beginJob() ;
       virtual void analyze(const edm::Event&, const edm::EventSetup&);
       virtual void endJob() ;
 
@@ -341,7 +341,7 @@ RootTupleMakerPAT::~RootTupleMakerPAT()
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-RootTupleMakerPAT::beginJob(const edm::EventSetup&)
+RootTupleMakerPAT::beginJob()
 {
   m_tree = fs->make<TTree>("RootTupleMakerPAT","RootTupleMakerPAT") ;
 
@@ -794,7 +794,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     {
       //cout << electron->pt()<< endl;
       //if electron is not ECAL driven, continue
-      if(!electron->isEcalDriven())
+      if(!electron->ecalDrivenSeed())
         continue;
       
       //exit from loop when you reach the required number of electrons
@@ -892,10 +892,11 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   //////////////////////////////////////////////////////////////////////////////////////////////
   edm::Handle<reco::GenParticleCollection> genParticles;
   iEvent.getByLabel ("genParticles", genParticles);
-  CreateParticleTree( genParticles );     
-  if(debug_==true)
-    cout << "gen particles filled" << endl;
-
+  if (genParticles.isValid()) {
+    CreateParticleTree( genParticles );
+    if(debug_==true)
+      cout << "gen particles filled" << endl;
+  }
 //    reco::GenParticleCollection::const_iterator genParts_it;
 //   for (genParts_it = genParticles->begin();
 //      genParts_it != genParticles->end(); ++genParts_it)
@@ -908,29 +909,31 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   edm::Handle<reco::GenJetCollection> genJets;
   iEvent.getByLabel(genJetLabel_, genJets);
   
-  genJetCount = 0;
-  for( GenJetCollection::const_iterator genjet = genJets->begin(); genjet != genJets->end();++genjet ) 
-    {
-      //exit from loop when you reach the required number of electrons
-      if(genJetCount > maxgenjets_)
-        break;
+  if (genJets.isValid()) {
+    genJetCount = 0;
+    for( GenJetCollection::const_iterator genjet = genJets->begin(); genjet != genJets->end();++genjet ) 
+      {
+        //exit from loop when you reach the required number of electrons
+        if(genJetCount > maxgenjets_)
+          break;
 
-      float EMF = genjet->emEnergy()/genjet->energy();
-      float HADF = genjet->hadEnergy()/genjet->energy();
+        float EMF = genjet->emEnergy()/genjet->energy();
+        float HADF = genjet->hadEnergy()/genjet->energy();
 
-      genJetPt[genJetCount]=genjet->pt();
-      genJetPhi[genJetCount]=genjet->phi();
-      genJetEta[genJetCount]=genjet->eta();
-      genJetEnergy[genJetCount]=genjet->energy();
-      genJetEMF[genJetCount]=EMF;
-      genJetHADF[genJetCount]=HADF;
-      
-      genJetCount++;
-    }
+        genJetPt[genJetCount]=genjet->pt();
+        genJetPhi[genJetCount]=genjet->phi();
+        genJetEta[genJetCount]=genjet->eta();
+        genJetEnergy[genJetCount]=genjet->energy();
+        genJetEMF[genJetCount]=EMF;
+        genJetHADF[genJetCount]=HADF;
+        
+        genJetCount++;
+      }
 
-  if(debug_==true)
-    cout << "genJets filled" << endl;
+    if(debug_==true)
+      cout << "genJets filled" << endl;
 
+  }
   ////////////// CaloJets
   ////////////////////////////////////////////////////////////////////////////////////////////
   edm::Handle<std::vector<pat::Jet> > caloJets;
@@ -1025,7 +1028,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   pfSumET = -99.;
   
   Handle<std::vector<pat::MET> > recoMET;
-  iEvent.getByLabel("layer1METs", recoMET);
+  iEvent.getByLabel("patMETs", recoMET);
 
   if(recoMET.isValid()) {
     const pat::MET& recomet = (*recoMET)[0];
@@ -1042,7 +1045,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   }
 
   Handle<std::vector<pat::MET> > recoMETtc;
-  iEvent.getByLabel("layer1METsTC", recoMETtc);
+  iEvent.getByLabel("patMETsTC", recoMETtc);
   
   if(recoMETtc.isValid()) {
     const pat::MET& recomettc = (*recoMETtc)[0];
@@ -1052,7 +1055,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   }
   
   Handle<std::vector<pat::MET> > recoMETpf;
-  iEvent.getByLabel("layer1METsPF", recoMETpf);
+  iEvent.getByLabel("patMETsPF", recoMETpf);
 
   if(recoMETpf.isValid()) {
     const pat::MET& recometpf = (*recoMETpf)[0];
@@ -1094,7 +1097,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   iEvent.getByLabel(muonLabel_, muons);
   
   Handle<reco::BeamSpot> beamSpot;
-  iEvent.getByLabel("offlineBeamSpot", beamSpot );  
+  iEvent.getByLabel("offlineBeamSpot", beamSpot );
 
   muonCount = 0;  
   for( std::vector<pat::Muon>::const_iterator muon = muons->begin(); muon != muons->end();++muon )

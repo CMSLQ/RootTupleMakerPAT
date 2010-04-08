@@ -3,7 +3,7 @@
 <use name=FWCore/ParameterSet>
 <use name=FWCore/MessageLogger>
 <use name=FWCore/ServiceRegistry>
-<use name=PhysicsTools/UtilAlgos>
+<use name=CommonTools/UtilAlgos>
 <use name=SimDataFormats/GeneratorProducts>
 <use name=DataFormats/HepMCCandidate>
 <use name=DataFormats/Common>
@@ -26,29 +26,6 @@
 <use name=root>
 <flags EDM_PLUGIN=1>
 <export>
-   <lib name=LeptoquarksRootTupleMaker>
-   <use name=FWCore/Framework>
-   <use name=FWCore/PluginManager>
-   <use name=FWCore/ParameterSet>
-   <use name=FWCore/ServiceRegistry>
-   <use name=SimDataFormats/GeneratorProducts>
-   <use name=DataFormats/HepMCCandidate>
-   <use name=DataFormats/Common>
-   <use name=DataFormats/Candidate>
-   <use name=DataFormats/Provenance>
-   <use name=DataFormats/PatCandidates>
-   <use name=DataFormats/EcalRecHit>
-   <use name=DataFormats/EgammaReco>
-   <use name=DataFormats/Math>
-   <use name=PhysicsTools/UtilAlgos>
-   <use name=PhysicsTools/CandUtils>
-   <use name=clhep>
-   <use name=root>
-   <use name=Geometry/CaloGeometry>
-   <use name=Geometry/CaloTopology>
-   <use name=Geometry/EcalAlgo>
-   <use name=RecoEcal/EgammaCoreTools>
-   <use name=lhapdf>
 </export>
 
 
