@@ -110,5 +110,9 @@ process.p = cms.Path(
     process.treeCreator
 )
 
+# Delete predefined Endpath (needed for running with CRAB)
+del process.out
+del process.outpath
+
 # Schedule definition
 process.schedule = cms.Schedule(process.p)
