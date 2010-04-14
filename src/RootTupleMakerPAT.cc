@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.14 2010/01/28 20:15:04 lockner Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.15 2010/04/08 19:33:57 ferencek Exp $
 //
 //
 
@@ -132,6 +132,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              eleSigmaIEIE[MAXELECTRONS];
       Float_t              eleDeltaPhiTrkSC[MAXELECTRONS];
       Float_t              eleDeltaEtaTrkSC[MAXELECTRONS];
+      Float_t              eleE1E9[MAXELECTRONS];
       Int_t                eleClassif[MAXELECTRONS];
       Int_t                eleHeepID[MAXELECTRONS];
       Int_t                elePassID[MAXELECTRONS];
@@ -162,6 +163,7 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              scHoE[MAXSC];
       Float_t              scSigmaIEIE[MAXSC];
       Float_t              scEcalIso[MAXSC];
+      Float_t              scE1E9[MAXSC];
       Float_t              scHEEPEcalIso[MAXSC];
       Float_t              scHEEPTrkIso[MAXSC];
       Int_t                scTrackMatch[MAXSC];
@@ -393,6 +395,7 @@ RootTupleMakerPAT::beginJob()
   m_tree->Branch("eleSigmaIEIE",&eleSigmaIEIE,"eleSigmaIEIE[eleCount]/F");
   m_tree->Branch("eleDeltaPhiTrkSC",&eleDeltaPhiTrkSC,"eleDeltaPhiTrkSC[eleCount]/F");
   m_tree->Branch("eleDeltaEtaTrkSC",&eleDeltaEtaTrkSC,"eleDeltaEtaTrkSC[eleCount]/F");
+  m_tree->Branch("eleE1E9",&eleE1E9,"eleE1E9[eleCount]/F");
   m_tree->Branch("eleClassif",&eleClassif,"eleClassif[eleCount]/I");
   m_tree->Branch("eleHeepID",&eleHeepID,"eleHeepID[eleCount]/I");
   m_tree->Branch("elePassID",&elePassID,"elePassID[eleCount]/I");
@@ -421,6 +424,7 @@ RootTupleMakerPAT::beginJob()
   m_tree->Branch("scHoE",&scHoE,"scHoE[scCount]/F");
   m_tree->Branch("scSigmaIEIE",&scSigmaIEIE,"scSigmaIEIE[scCount]/F");
   m_tree->Branch("scEcalIso",&scEcalIso,"scEcalIso[scCount]/F");
+  m_tree->Branch("scE1E9",&scE1E9,"scE1E9[scCount]/F");
   m_tree->Branch("scHEEPEcalIso",&scHEEPEcalIso,"scHEEPEcalIso[scCount]/F");
   m_tree->Branch("scHEEPTrkIso",&scHEEPTrkIso,"scHEEPTrkIso[scCount]/F");
   m_tree->Branch("scTrackMatch",&scTrackMatch,"scTrackMatch[scCount]/I");
@@ -598,10 +602,17 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   iSetup.get<CaloGeometryRecord>().get(pG);
   const CaloGeometry* caloGeom = pG.product();
 
+  edm::ESHandle<CaloTopology> pTopology;
+  iSetup.get<CaloTopologyRecord>().get(pTopology);
+  const CaloTopology* theCaloTopology = pTopology.product();
+
   edm::Handle<EcalRecHitCollection> ecalBarrelRecHitHandle;
   iEvent.getByLabel(ecalEBLabel_, ecalBarrelRecHitHandle);
+  const EcalRecHitCollection*  theEcalBarrelCollection = ecalBarrelRecHitHandle.product();
   edm::Handle<EcalRecHitCollection> ecalEndcapRecHitHandle;
   iEvent.getByLabel(ecalEELabel_, ecalEndcapRecHitHandle);
+  const EcalRecHitCollection* theEcalEndcapCollection = ecalEndcapRecHitHandle.product();
+
   edm::Handle<SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> > > hbheRecHitsHandle;
   iEvent.getByLabel("hbhereco",hbheRecHitsHandle);
   const SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> >* hbheRecHits = hbheRecHitsHandle.failedToGet () ? 0 : &*hbheRecHitsHandle;
@@ -709,6 +720,15 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       scTrack1Pt[scCount]=closestTrk.pt();
       scTrack2Pt[scCount]=nextTrk.pt();
 
+      double emax=0;
+      double e9=99;
+      for(reco::CaloCluster_iterator clusterIt = sc->clustersBegin(); clusterIt != sc->clustersEnd(); ++clusterIt) {
+	  emax = EcalClusterTools::eMax(*(*clusterIt), theEcalBarrelCollection);
+	  e9   = EcalClusterTools::e3x3(*(*clusterIt), theEcalBarrelCollection, &(*theCaloTopology));
+      }
+      scE1E9[scCount]= emax/e9;
+
+
       scCount++;
 
     }
@@ -778,6 +798,14 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       scTrack2Phi[scCount]=nextTrk.phi();
       scTrack1Pt[scCount]=closestTrk.pt();
       scTrack2Pt[scCount]=nextTrk.pt();
+
+      double emax=0;
+      double e9=99;
+      for(reco::CaloCluster_iterator clusterIt = sc->clustersBegin(); clusterIt != sc->clustersEnd(); ++clusterIt) {
+	  emax = EcalClusterTools::eMax(*(*clusterIt), theEcalEndcapCollection);
+	  e9   = EcalClusterTools::e3x3(*(*clusterIt), theEcalEndcapCollection, &(*theCaloTopology));
+      }
+      scE1E9[scCount]= emax/e9;
 
       scCount++;
 
@@ -863,6 +891,21 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       eleRelIso[eleCount]=relIso;
       elePassIso[eleCount]=passIso;
       eleOverlaps[eleCount]=overlaps;
+
+      ////////// Ecal Spike Cleaning
+      double emax=0;
+      double e9=99;
+      for(reco::CaloCluster_iterator clusterIt = electron->superCluster()->clustersBegin(); clusterIt != electron->superCluster()->clustersEnd(); ++clusterIt) {
+	if((*clusterIt)->seed().subdetId() == EcalBarrel) {
+	  emax = EcalClusterTools::eMax(*(*clusterIt), theEcalBarrelCollection);
+	  e9   = EcalClusterTools::e3x3(*(*clusterIt), theEcalBarrelCollection, &(*theCaloTopology));
+	} else {
+	  emax = EcalClusterTools::eMax(*(*clusterIt), theEcalEndcapCollection);
+	  e9   = EcalClusterTools::e3x3(*(*clusterIt), theEcalEndcapCollection, &(*theCaloTopology));
+	}
+      }
+      eleE1E9[eleCount] = e1/e9;
+
 
       ///////// SC associated with electron
       reco::SuperClusterRef eleSCRef = electron->superCluster();  //get SCRef to use to make ele candidate

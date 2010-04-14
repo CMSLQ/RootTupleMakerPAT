@@ -113,6 +113,7 @@ extern "C" {
 
 //Supercluster stuff
 #include "RecoEgamma/EgammaTools/interface/HoECalculator.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
 #include "RecoEcal/EgammaCoreTools/interface/EcalClusterLazyTools.h"
 #include "RecoEgamma/EgammaIsolationAlgos/interface/EgammaRecHitIsolation.h"
 #include "DataFormats/RecoCandidate/interface/RecoEcalCandidate.h"
@@ -121,6 +122,8 @@ extern "C" {
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "CommonTools/RecoAlgos/src/SuperClusterToCandidate.h"
+#include "Geometry/CaloTopology/interface/CaloTopology.h"
+#include "Geometry/CaloEventSetup/interface/CaloTopologyRecord.h"
 
 // PAT stuff
 #include "DataFormats/Common/interface/View.h"
