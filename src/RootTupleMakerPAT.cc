@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.15 2010/04/08 19:33:57 ferencek Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.16 2010/04/14 13:31:57 lockner Exp $
 //
 //
 
@@ -904,7 +904,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	  e9   = EcalClusterTools::e3x3(*(*clusterIt), theEcalEndcapCollection, &(*theCaloTopology));
 	}
       }
-      eleE1E9[eleCount] = e1/e9;
+      eleE1E9[eleCount] = emax/e9;
 
 
       ///////// SC associated with electron
