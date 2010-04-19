@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.16 2010/04/14 13:31:57 lockner Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.17 2010/04/14 13:45:22 lockner Exp $
 //
 //
 
@@ -202,6 +202,10 @@ class RootTupleMakerPAT : public edm::EDAnalyzer {
       Float_t              caloJetSoftMuonByPtBTag[MAXCALOJETS];
       Float_t              caloJetBProbabilityBTag[MAXCALOJETS];
 
+      Int_t                caloJetN90Hits[MAXCALOJETS];
+      Float_t              caloJetFHPD[MAXCALOJETS];
+      Float_t              caloJetFRBX[MAXCALOJETS];
+
       // Muons
       Int_t                muonCount;
       Float_t              muonEta[MAXMUONS];
@@ -284,7 +288,7 @@ RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
   scEBLabel_       = iConfig.getUntrackedParameter<edm::InputTag>("superClusterEBLabel",edm::InputTag("hybridSuperClusters"));
   scEELabel_       = iConfig.getUntrackedParameter<edm::InputTag>("superClusterEELabel",edm::InputTag("multi5x5SuperClustersWithPreshower"));
   caloJetLabel_  = iConfig.getUntrackedParameter<edm::InputTag>("caloJetLabel",edm::InputTag("cleanLayer1Jets"));
-  genJetLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("genJetLabel",edm::InputTag("sisCone5GenJets"));
+  genJetLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("genJetLabel",edm::InputTag("ak5GenJets"));
   ecalEELabel_   = iConfig.getUntrackedParameter<edm::InputTag>("ecalEELabel",edm::InputTag("reducedEcalRecHitsEE")); 
   ecalEBLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("ecalEBLabel",edm::InputTag("reducedEcalRecHitsEB")); 
   trkLabel_   = iConfig.getUntrackedParameter<edm::InputTag>("trkLabel",edm::InputTag("generalTracks")); 
@@ -460,6 +464,9 @@ RootTupleMakerPAT::beginJob()
   m_tree->Branch("caloJetSimpleSecondaryVertexBTag",&caloJetSimpleSecondaryVertexBTag,"caloJetSimpleSecondaryVertexBTag[caloJetCount]/F");
   m_tree->Branch("caloJetSoftMuonByPtBTag",&caloJetSoftMuonByPtBTag,"caloJetSoftMuonByPtBTag[caloJetCount]/F");
   m_tree->Branch("caloJetBProbabilityBTag",&caloJetBProbabilityBTag,"caloJetBProbabilityBTag[caloJetCount]/F");
+  m_tree->Branch("caloJetFHPD",&caloJetFHPD,"caloJetFHPD[caloJetCount]/F");
+  m_tree->Branch("caloJetFRBX",&caloJetFRBX,"caloJetFRBX[caloJetCount]/F");
+  m_tree->Branch("caloJetN90Hits",&caloJetN90Hits,"caloJetN90Hits[caloJetCount]/I");
 
   m_tree->Branch("muonCount",&muonCount,"muonCount/I");
   m_tree->Branch("muonEta",&muonEta,"muonEta[muonCount]/F");
@@ -1034,6 +1041,13 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
         }
       }
 
+      Float_t fHPD    = (Float_t) calojet -> jetID().fHPD;
+      Float_t fRBX    = (Float_t) calojet -> jetID().fRBX;
+      Int_t   n90Hits = (Int_t  ) calojet -> jetID().n90Hits;
+
+      caloJetFHPD[caloJetCount]=fHPD;
+      caloJetFRBX[caloJetCount]=fRBX;
+      caloJetN90Hits[caloJetCount]=n90Hits;
       caloJetPt[caloJetCount]=calojet->pt();
       caloJetEnergy[caloJetCount]=calojet->energy();
       caloJetPt_raw[caloJetCount]=calojet->correctedJet("raw").pt();
