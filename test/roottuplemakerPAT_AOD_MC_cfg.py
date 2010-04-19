@@ -6,7 +6,7 @@ from PhysicsTools.PatAlgos.tools.coreTools import *
 ############## IMPORTANT ########################################
 # if you run over many samples and you save the log, remember to reduce
 # the size of the output by prescaling the report of the event number
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 process.MessageLogger.cerr.default.limit = 100
 #################################################################
 
@@ -19,14 +19,14 @@ process.TFileService = cms.Service("TFileService",
 process.GlobalTag.globaltag = 'START3X_V26A::All'
 
 # Events to process
-process.maxEvents.input = 100
+process.maxEvents.input = -1
 
 # Options and Output Report
-process.options.wantSummary = True
+process.options.wantSummary = False
 
 # Input files
 process.source.fileNames = [
-    '/store/mc/Spring10/MinBias/GEN-SIM-RECO/START3X_V26A_356ReReco-v1/0009/FEFC70B6-F53D-DF11-B57E-003048679150.root'
+    'file:inputFile.root'
 ]
 
 # Add tcMET and pfMET
@@ -37,6 +37,9 @@ addPfMET(process, 'PF')
 # Get the 7 TeV GeV jet corrections
 from PhysicsTools.PatAlgos.tools.jetTools import *
 switchJECSet( process, "Summer09_7TeV_ReReco332")
+
+from PhysicsTools.PatAlgos.tools.cmsswVersionTools import *
+run33xOnReRecoMC( process, "ak5GenJets")
 
 # Switch on PAT trigger
 from PhysicsTools.PatAlgos.tools.trigTools import switchOnTrigger
@@ -90,7 +93,7 @@ process.treeCreator.doBeamSpotCorr  = cms.untracked.bool(False)
 process.treeCreator.muonLabel       = cms.untracked.InputTag("cleanPatMuons");
 process.treeCreator.electronLabel   = cms.untracked.InputTag("cleanPatElectrons");
 process.treeCreator.caloJetLabel    = cms.untracked.InputTag("cleanPatJets");
-process.treeCreator.genJetLabel     = cms.untracked.InputTag("ak5GenJets");
+process.treeCreator.genJetLabel     = cms.untracked.InputTag("iterativeCone5GenJets");
 process.treeCreator.ecalEBLabel     = cms.untracked.InputTag("reducedEcalRecHitsEB");
 process.treeCreator.ecalEELabel     = cms.untracked.InputTag("reducedEcalRecHitsEE");
 process.treeCreator.superClusterEELabel=cms.untracked.InputTag("multi5x5SuperClustersWithPreshower");
