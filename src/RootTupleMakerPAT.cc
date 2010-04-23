@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.17 2010/04/14 13:45:22 lockner Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.18 2010/04/19 15:30:34 lockner Exp $
 //
 //
 
@@ -265,8 +265,8 @@ RootTupleMakerPAT::RootTupleMakerPAT(const edm::ParameterSet& iConfig)
   maxgenparticles_   = iConfig.getUntrackedParameter<int>("maxgenparticles",100); 
   maxgenjets_        = iConfig.getUntrackedParameter<int>("maxgenjets",10); 
   maxelectrons_      = iConfig.getUntrackedParameter<int>("maxelectrons",5);
-  maxEBsuperclusters_  = iConfig.getUntrackedParameter<int>("maxEBsuperclusters",20);
-  maxEEsuperclusters_  = iConfig.getUntrackedParameter<int>("maxEEsuperclusters",10);
+  maxEBsuperclusters_  = iConfig.getUntrackedParameter<int>("maxbarrelsuperclusters",20);
+  maxEEsuperclusters_  = iConfig.getUntrackedParameter<int>("maxendcapsuperclusters",10);
   maxcalojets_       = iConfig.getUntrackedParameter<int>("maxcalojets",10); 
   maxmuons_          = iConfig.getUntrackedParameter<int>("maxmuons",5); 
 
@@ -657,7 +657,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   ////// SC for barrel and endcap are in different collections
   ////// "hybrid" = barrel, "multi5x5" = endcap.  
   ////// Loop over both collections, but don't reset scCount in between
-
+  cout<<">> maxEBsuperclusters_ "<<maxEBsuperclusters_<<endl;
   for( SuperClusterCollection::const_iterator sc = superClustersEBHandle->begin(); sc != superClustersEBHandle->end();++sc ) 
     {
       if (scCount > maxEBsuperclusters_) break;
