@@ -657,7 +657,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   ////// SC for barrel and endcap are in different collections
   ////// "hybrid" = barrel, "multi5x5" = endcap.  
   ////// Loop over both collections, but don't reset scCount in between
-  cout<<">> maxEBsuperclusters_ "<<maxEBsuperclusters_<<endl;
+
   for( SuperClusterCollection::const_iterator sc = superClustersEBHandle->begin(); sc != superClustersEBHandle->end();++sc ) 
     {
       if (scCount > maxEBsuperclusters_) break;
