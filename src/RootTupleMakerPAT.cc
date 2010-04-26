@@ -14,7 +14,7 @@
 // Original Author:  Ellie Lockner
 //  PAT version by: Dinko Ferencek
 //         Created:  Tue Oct 21 13:56:04 CEST 2008
-// $Id: RootTupleMakerPAT.cc,v 1.18 2010/04/19 15:30:34 lockner Exp $
+// $Id: RootTupleMakerPAT.cc,v 1.20 2010/04/23 15:44:27 ferencek Exp $
 //
 //
 
@@ -729,17 +729,20 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
       double emax=0;
       double e9=99;
+      double e1e9_MAX = 0;
       for(reco::CaloCluster_iterator clusterIt = sc->clustersBegin(); clusterIt != sc->clustersEnd(); ++clusterIt) {
 	  emax = EcalClusterTools::eMax(*(*clusterIt), theEcalBarrelCollection);
 	  e9   = EcalClusterTools::e3x3(*(*clusterIt), theEcalBarrelCollection, &(*theCaloTopology));
+	  if (emax/e9 > e1e9_MAX) e1e9_MAX=emax/e9;
       }
-      scE1E9[scCount]= emax/e9;
+      scE1E9[scCount]= e1e9_MAX;
 
 
       scCount++;
 
     }
 
+  int EEscCount = 0;
   for( SuperClusterCollection::const_iterator sc = superClustersEEHandle->begin(); sc != superClustersEEHandle->end();++sc ) 
     {
       if (scCount > maxEEsuperclusters_ + maxEBsuperclusters_ ) break;
@@ -765,7 +768,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       double scSigmaiEiE= sqrt(scLocalCov[0]); //same method used in GsfElectronAlgo.cc
       scSigmaIEIE[scCount]=scSigmaiEiE;
 
-      reco::SuperClusterRef tempSCRef(superClustersEE,scCount);  //get SCRef to use to make ele candidate
+      reco::SuperClusterRef tempSCRef(superClustersEE,EEscCount);  //get SCRef to use to make ele candidate
       reco::RecoEcalCandidate ecalCand;  //make ele candidate to use Iso algorithm
       ecalCand.setSuperCluster(tempSCRef);
       scEcalIso[scCount] = ecalEndcapIsol.getEtSum(&ecalCand);
@@ -808,13 +811,16 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
       double emax=0;
       double e9=99;
+      double e1e9_MAX = 0;
       for(reco::CaloCluster_iterator clusterIt = sc->clustersBegin(); clusterIt != sc->clustersEnd(); ++clusterIt) {
 	  emax = EcalClusterTools::eMax(*(*clusterIt), theEcalEndcapCollection);
 	  e9   = EcalClusterTools::e3x3(*(*clusterIt), theEcalEndcapCollection, &(*theCaloTopology));
+	  if (emax/e9 > e1e9_MAX) e1e9_MAX=emax/e9;
       }
-      scE1E9[scCount]= emax/e9;
+      scE1E9[scCount]= e1e9_MAX ;
 
       scCount++;
+      EEscCount++;
 
     }
 
@@ -902,6 +908,7 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       ////////// Ecal Spike Cleaning
       double emax=0;
       double e9=99;
+      double e1e9_MAX = 0;
       for(reco::CaloCluster_iterator clusterIt = electron->superCluster()->clustersBegin(); clusterIt != electron->superCluster()->clustersEnd(); ++clusterIt) {
 	if((*clusterIt)->seed().subdetId() == EcalBarrel) {
 	  emax = EcalClusterTools::eMax(*(*clusterIt), theEcalBarrelCollection);
@@ -910,8 +917,9 @@ RootTupleMakerPAT::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	  emax = EcalClusterTools::eMax(*(*clusterIt), theEcalEndcapCollection);
 	  e9   = EcalClusterTools::e3x3(*(*clusterIt), theEcalEndcapCollection, &(*theCaloTopology));
 	}
+	if (emax/e9 > e1e9_MAX) e1e9_MAX=emax/e9;
       }
-      eleE1E9[eleCount] = emax/e9;
+      eleE1E9[eleCount] = e1e9_MAX;
 
 
       ///////// SC associated with electron
