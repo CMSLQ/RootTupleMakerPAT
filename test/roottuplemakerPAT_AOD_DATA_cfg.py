@@ -6,7 +6,7 @@ from PhysicsTools.PatAlgos.tools.coreTools import *
 ############## IMPORTANT ########################################
 # if you run over many samples and you save the log, remember to reduce
 # the size of the output by prescaling the report of the event number
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.MessageLogger.cerr.default.limit = 100
 #################################################################
 
@@ -19,15 +19,34 @@ process.TFileService = cms.Service("TFileService",
 process.GlobalTag.globaltag = 'GR_R_35X_V6::All'
 
 # Events to process
-process.maxEvents.input = 100
+process.maxEvents.input = -1
 
 # Options and Output Report
-process.options.wantSummary = True
+process.options.wantSummary = False
 
 # Input files
 process.source.fileNames = [
-    '/store/data/Commissioning10/MinimumBias/RAW-RECO/Apr1Skim_GOODCOLL-v1/0139/7C27BE8F-B73E-DF11-9780-002354EF3BE2.root'
+    'file:inputFile.root'
 ]
+
+process.load('L1TriggerConfig.L1GtConfigProducers.L1GtTriggerMaskTechTrigConfig_cff')
+from HLTrigger.HLTfilters.hltLevel1GTSeed_cfi import hltLevel1GTSeed
+hltLevel1GTSeed.L1TechTriggerSeeding = cms.bool(True)
+process.bptxAnd   = hltLevel1GTSeed.clone(L1SeedsLogicalExpression =
+cms.string('0'))
+process.bscFilter = hltLevel1GTSeed.clone(L1SeedsLogicalExpression =
+cms.string('(40 OR 41) AND NOT (36 OR 37 OR 38 OR 39)'))
+
+#Add HBHE noise filter manually
+process.load("CommonTools.RecoAlgos.HBHENoiseFilter_cfi")
+
+#filter out beam scraping events
+process.noscraping = cms.EDFilter("FilterOutScraping",
+  applyfilter = cms.untracked.bool(True),
+  degugOn = cms.untracked.bool(True),
+  numtrack = cms.untracked.uint32(10),
+  thresh = cms.untracked.double(0.25)
+)
 
 # Turn off MC matching for the process
 removeMCMatching(process, ['All'])
@@ -71,7 +90,7 @@ process.LJFilter.muLabel = 'muons'
 process.LJFilter.elecLabel = 'gsfElectrons'
 process.LJFilter.jetLabel = 'ak5CaloJets'
 process.LJFilter.muPT = 10.
-process.LJFilter.elecPT = 30.
+process.LJFilter.elecPT = 10.
 
 # RootTupleMaker
 process.treeCreator = cms.EDAnalyzer('RootTupleMakerPAT')
@@ -105,6 +124,10 @@ process.treeCreator.muonIso         = cms.untracked.double(0.05);
 
 # Path definition
 process.p = cms.Path(
+    process.bptxAnd*
+    process.bscFilter*
+    process.noscraping*
+    process.HBHENoiseFilter*
     process.LJFilter*
     process.patDefaultSequence*
     process.treeCreator
